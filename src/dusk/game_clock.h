@@ -7,6 +7,8 @@ constexpr float kSimPeriod = 1.0f / 30.0f;
 constexpr float kUiMaximumDt = 0.05f;
 constexpr float kUiInitialDt = 1.0f / 60.0f;
 
+float original_frames();
+
 struct FrameTiming {
     // Amount of time elapsed in seconds since the last advance
     float dt;
@@ -29,6 +31,7 @@ void commit_sim_tick();
 float sample_interpolation_step();
 
 bool is_sim_frame();
+bool is_presentation_frame();
 
 float consume_interval(const void* consumer);
 

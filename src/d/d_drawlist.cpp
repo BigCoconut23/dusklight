@@ -2067,7 +2067,7 @@ void dDlst_list_c::wipeIn(f32 i_wipeSpeed) {
 
 void dDlst_list_c::calcWipe() {
     if (mWipe) {
-        mWipeRate += mWipeSpeed;
+        mWipeRate += mWipeSpeed IF_DUSK(* dusk::game_clock::original_frames());
         if (mWipeRate < 0.0f) {
             mWipeRate = 0.0f;
         } else if (mWipeRate > 1.0f) {
