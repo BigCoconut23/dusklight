@@ -2,6 +2,9 @@
 
 #include "dusk/game_clock.h"
 
+#include "JSystem/J2DGraph/J2DAnimation.h"
+#include "SSystem/SComponent/c_lib.h"
+
 #include <dolphin/types.h>
 
 #include <algorithm>
@@ -49,6 +52,43 @@ void present_animation(Animation& animation, f32& frame, Pane& pane, Apply apply
     if (frame >= animation.duration) {
         animation.active = false;
     }
+}
+
+inline void present_looping(f32& frame, J2DAnmBase* anm, f32 speed) {
+    if (anm == nullptr) {
+        return;
+    }
+    advance_looping_frame(frame, speed, anm->getFrameMax());
+    anm->setFrame(frame);
+}
+
+inline void present_addCalc(f32* value, f32 target, f32 scale, f32 maxStep, f32 minStep) {
+    const f32 frames = game_clock::original_frames();
+    if (*value == target || frames <= 0.0f) {
+        return;
+    }
+    const f32 timedScale = frames == 1.0f ? scale : 1.0f - std::pow(1.0f - scale, frames);
+    cLib_addCalc(value, target, timedScale, maxStep * frames, minStep * frames);
+}
+
+inline void present_addCalc2(f32* value, f32 target, f32 scale, f32 maxStep, f32 snap) {
+    const f32 frames = game_clock::original_frames();
+    if (*value == target || frames <= 0.0f) {
+        return;
+    }
+    const f32 timedScale = frames == 1.0f ? scale : 1.0f - std::pow(1.0f - scale, frames);
+    cLib_addCalc2(value, target, timedScale, maxStep * frames);
+    if (fabsf(*value - target) < snap) {
+        *value = target;
+    }
+}
+
+inline bool present_chase(f32* value, f32 target, f32 scale, f32 maxStep, f32 snap) {
+    if (*value == target) {
+        return false;
+    }
+    present_addCalc2(value, target, scale, maxStep, snap);
+    return true;
 }
 
 }  // namespace dusk::vdt
