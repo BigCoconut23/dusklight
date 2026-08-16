@@ -19,6 +19,7 @@
 #include "m_Do/m_Do_graphic.h"
 
 #if TARGET_PC
+#include "dusk/game_clock.h"
 #include "dusk/interp/frame_interpolation.h"
 #include "dusk/version.hpp"
 #endif
@@ -380,6 +381,12 @@ int daTitle_c::getDemoPrm() {
 }
 
 int daTitle_c::Draw() {
+#if TARGET_PC
+    if (field_0x600 != NULL && dusk::game_clock::is_presentation_frame()) {
+        field_0x600->presentAlphaAnime();
+    }
+#endif
+
     J3DModelData* modelData = mpModel->getModelData();
     cMtx_trans(mpModel->getBaseTRMtx(), IREG_F(7), IREG_F(8), IREG_F(9) + -430.0f);
     mpModel->getBaseScale()->x = -1.0f;

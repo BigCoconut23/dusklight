@@ -1,5 +1,6 @@
 #pragma once
 
+#include "JSystem/JUtility/TColor.h"
 #include "SSystem/SComponent/c_angle.h"
 #include "SSystem/SComponent/c_sxyz.h"
 #include "SSystem/SComponent/c_xyz.h"
@@ -47,6 +48,14 @@ inline void lerp(Mtx& out, const Mtx& lhs, const Mtx& rhs, float step) {
             out[row][col] = l + (rhs[row][col] - l) * step;
         }
     }
+}
+
+inline JUtility::TColor lerp(const JUtility::TColor& lhs, const JUtility::TColor& rhs, float step) {
+    return JUtility::TColor(
+        lerp(lhs.r, rhs.r, step),
+        lerp(lhs.g, rhs.g, step),
+        lerp(lhs.b, rhs.b, step),
+        lerp(lhs.a, rhs.a, step));
 }
 
 }  // namespace dusk::interp
