@@ -25,6 +25,10 @@ inline f32 lerp(f32 lhs, f32 rhs, float step) {
     return lhs + (rhs - lhs) * step;
 }
 
+inline void lerp(f32& out, const f32& lhs, const f32& rhs, float step) {
+    out = lerp(lhs, rhs, step);
+}
+
 inline u8 lerp(u8 lhs, u8 rhs, float step) {
     return static_cast<u8>(std::lround(lerp(static_cast<f32>(lhs), static_cast<f32>(rhs), step)));
 }
