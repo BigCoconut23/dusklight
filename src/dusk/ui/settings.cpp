@@ -8,6 +8,7 @@
 #include "number_button.hpp"
 #include "pane.hpp"
 #include "prelaunch.hpp"
+#include "saves_window.hpp"
 #include "touch_controls_editor.hpp"
 #include "ui.hpp"
 
@@ -246,10 +247,8 @@ class DataFolderPathText : public Component {
 public:
     explicit DataFolderPathText(Rml::Element* parent)
         : Component(append(parent, "data-folder-path")) {
-        auto* current = append(mRoot, "data-folder-current");
-        append_text(current, "Current data folder:");
-        append(current, "br");
-        mPath = append(current, "data-folder-value");
+        append_text_element(mRoot, "small", "Current data folder:");
+        mPath = append(mRoot, "file-path");
     }
 
     void update() override {
@@ -659,6 +658,7 @@ SettingsWindow::SettingsWindow(bool prelaunch) : mPrelaunch(prelaunch) {
                             });
                     }
                 });
+            add_save_files_control(leftPane, rightPane);
         });
     }
 
