@@ -3073,7 +3073,7 @@ DUSK_GAME_DATA f32 dMenu_Collect3D_c::mViewOffsetY = -100.0f;
 
 void dMenu_Collect3D_c::setupItem3D(Mtx param_0) {
     GXSetViewport(0.0f, mViewOffsetY, FB_WIDTH, FB_HEIGHT, 0.0f, 1.0f);
-    mViewOffsetY = -100.0f;
+    IF_NOT_DUSK(mViewOffsetY = -100.0f);
     Mtx44 projection;
     C_MTXPerspective(projection, 45.0f, mDoGph_gInf_c::getAspect(), 1.0f, 100000.0f);
     GXSetProjection(projection, GX_PERSPECTIVE);

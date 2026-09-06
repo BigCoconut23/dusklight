@@ -2157,16 +2157,6 @@ static void captureScreenPerspDrawInfo(JPADrawInfo& info) {
 
 static void drawItem3D() {
     ZoneScoped;
-#ifdef TARGET_PC
-    if (dusk::interp::is_enabled()) {
-        // FRAME INTERP NOTE: Title screen needs 0.0f while everything else that runs through this is -100.0f.
-        if (fopAcM_SearchByName(fpcNm_TITLE_e) != nullptr) {
-            dMenu_Collect3D_c::setViewPortOffsetY(0.0f);
-        } else {
-            dMenu_Collect3D_c::setViewPortOffsetY(-100.0f);
-        }
-    }
-#endif
     Mtx item_mtx;
     dMenu_Collect3D_c::setupItem3D(item_mtx);
 
