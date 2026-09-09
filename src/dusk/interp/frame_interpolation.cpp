@@ -1,8 +1,8 @@
 #include "dusk/interp/frame_interpolation.h"
 
 #include "dusk/game_clock.h"
-#include "dusk/interp/samples.h"
 #include "dusk/interp/lerp.h"
+#include "dusk/interp/samples.h"
 
 #include "mtx.h"
 
@@ -16,6 +16,7 @@ void camera_on_begin_record();
 bool camera_apply_presentation();
 void camera_restore_presentation();
 void camera_invalidate_snapshots();
+void clear_weather_samples();
 }  // namespace dusk::interp
 
 namespace {
@@ -104,6 +105,7 @@ void clear_interpolation_history() {
     s_currentRecording = {};
     clear_replacements();
     dusk::interp::clear_owned_samples();
+    dusk::interp::clear_weather_samples();
     clear_callbacks();
     dusk::interp::camera_invalidate_snapshots();
     s_presentationDepth = 0;
