@@ -15,6 +15,10 @@
 #include "d/actor/d_a_midna.h"
 #include "d/actor/d_a_spinner.h"
 
+#if TARGET_PC
+#include "dusk/interp/samples.h"
+#endif
+
 bool daPy_frameCtrl_c::checkAnmEnd() {
     if (getEndFlg() != 0 && getNowSetFlg() == 0) {
         return true;
@@ -429,11 +433,16 @@ JKRHeap* daPy_anmHeap_c::setAnimeHeap() {
 #include "assets/l_sightDL__d_a_player.h"
 #endif
 
+#if TARGET_PC
+daPy_sightPacket_c::~daPy_sightPacket_c() {
+    dusk::interp::erase_owned_samples(this);
+}
+#endif
+
 void daPy_sightPacket_c::draw() {
     ZoneScoped;
-#if !TARGET_PC
-    TGXTexObj texObj;
-#endif
+    IF_DUSK(setSight(false);)
+    IF_NOT_DUSK(TGXTexObj texObj);
 
     j3dSys.reinitGX();
     GXSetNumIndStages(0);
@@ -499,13 +508,21 @@ void daPy_sightPacket_c::draw() {
     J3DShape::resetVcdVatCache();
 }
 
-void daPy_sightPacket_c::setSight() {
+void daPy_sightPacket_c::setSight(IF_DUSK(bool registerPacket)) {
     Vec proj;
     mDoLib_project(&mPos, &proj);
+#if TARGET_PC
+    auto& positions = dusk::interp::get<dusk::interp::Samples<cXyz>>(this);
+    const cXyz screen(proj);
+    positions.capture(&screen, 1);
+    proj = positions.read(0, screen);
+#endif
     mDoMtx_stack_c::transS(proj.x, proj.y, proj.z);
     mDoMtx_stack_c::scaleM(32.0f, 32.0f, 32.0f);
     mDoMtx_copy(mDoMtx_stack_c::get(), mProjMtx);
+    IF_DUSK_BLOCK(registerPacket)
     dComIfGd_set2DXlu(this);
+    IF_DUSK_BLOCK_END
 }
 
 void daPy_sightPacket_c::setSightImage(ResTIMG* i_img) {

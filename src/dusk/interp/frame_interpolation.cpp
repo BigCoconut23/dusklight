@@ -40,6 +40,7 @@ Recording s_previousRecording;
 absl::flat_hash_map<uintptr_t, Mtx> g_replacements;
 
 int s_presentationDepth = 0;
+bool s_cameraPresentationActive = false;
 
 const Mtx* resolve_replacement(const Mtx* source, Mtx* scratch) {
     if (!s_replacementsActive || source == nullptr || dusk::interp::presentation_sync_active()) {
@@ -111,6 +112,7 @@ void clear_interpolation_history() {
     clear_callbacks();
     dusk::interp::camera_invalidate_snapshots();
     s_presentationDepth = 0;
+    s_cameraPresentationActive = false;
 }
 
 }  // namespace
@@ -248,12 +250,11 @@ void begin_presentation(float step) {
         s_presentationDepth++;
         return;
     }
-    if (!camera_apply_presentation()) {
-        return;
-    }
-
     s_presentationDepth = 1;
-    callbacks_run();
+    s_cameraPresentationActive = camera_apply_presentation();
+    if (s_cameraPresentationActive) {
+        callbacks_run();
+    }
 }
 
 void end_presentation() {
@@ -265,7 +266,10 @@ void end_presentation() {
         return;
     }
 
-    camera_restore_presentation();
+    if (s_cameraPresentationActive) {
+        camera_restore_presentation();
+        s_cameraPresentationActive = false;
+    }
 }
 
 bool is_presentation_active() {

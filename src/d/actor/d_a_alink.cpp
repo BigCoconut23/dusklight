@@ -54,7 +54,7 @@
 #if TARGET_PC
 #include "dusk/action_bindings.h"
 #include "dusk/interp/frame_interpolation.h"
-#include "dusk/interp/samples.h"
+#include "dusk/interp/sight.h"
 #include "dusk/settings.h"
 #include "res/Object/Alink.h"
 #include <cstring>

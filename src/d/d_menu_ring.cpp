@@ -101,7 +101,7 @@ dMenu_Ring_c::dMenu_Ring_c(JKRExpHeap* i_heap, STControl* i_stick, CSTControl* i
         mCenterPosX = 0.0f;
         mCenterPosY = -FB_HEIGHT_BASE;
     }
-    if (mRingOrigin == 3) {
+    IF_DUSK(else) if (mRingOrigin == 3) {
         mCenterPosX = FB_WIDTH_BASE;
         mCenterPosY = 0.0f;
     } else if (mRingOrigin == 1) {
