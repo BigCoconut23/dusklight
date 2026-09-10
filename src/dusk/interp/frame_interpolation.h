@@ -24,6 +24,8 @@ bool should_capture();
 void record_final_mtx(Mtx m, const void* key);
 void record_final_mtx(Mtx m);
 
+void forget_mtx(const void* key);
+
 bool lookup_replacement(const void* key, Mtx out);
 bool lookup_concat_replacement(const void* lhs, const void* rhs, Mtx out);
 

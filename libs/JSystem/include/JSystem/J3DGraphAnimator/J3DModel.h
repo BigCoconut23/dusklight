@@ -109,6 +109,7 @@ public:
     Vec* getBaseScale() { return &mBaseScale; }
 #if TARGET_PC
     void setAnmMtx(int jointNo, Mtx m);
+    void forgetMtx();
 #else
     void setAnmMtx(int jointNo, Mtx m) {
         mMtxBuffer->setAnmMtx(jointNo, m);

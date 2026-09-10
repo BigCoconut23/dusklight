@@ -205,6 +205,13 @@ void record_final_mtx(Mtx m) {
     record_final_mtx(m, m);
 }
 
+void forget_mtx(const void* key) {
+    const auto address = reinterpret_cast<uintptr_t>(key);
+    s_previousRecording.matrix_values.erase(address);
+    s_currentRecording.matrix_values.erase(address);
+    g_replacements.erase(address);
+}
+
 bool lookup_replacement(const void* key, Mtx out) {
     if (presentation_sync_active() || !s_replacementsActive || key == nullptr) {
         return false;

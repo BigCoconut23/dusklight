@@ -108,11 +108,6 @@ void J3DModel::interp_callback(void* pUserWork) {
     i_this->diff();
 }
 
-void J3DModel::setAnmMtx(int jointNo, Mtx m) {
-    mMtxBuffer->setAnmMtx(jointNo, m);
-    dusk::interp::record_final_mtx(mMtxBuffer->getAnmMtx(jointNo));
-}
-
 void J3DModel::calc_presentation_base_mtx() {
     Mtx identity;
     MTXIdentity(identity);
@@ -128,6 +123,21 @@ void J3DModel::prepare_presentation_view() {
         presentationBase = replacement;
     }
     MTXConcat(j3dSys.getViewMtx(), presentationBase, mInternalView);
+}
+
+void J3DModel::setAnmMtx(int jointNo, Mtx m) {
+    mMtxBuffer->setAnmMtx(jointNo, m);
+    dusk::interp::record_final_mtx(mMtxBuffer->getAnmMtx(jointNo));
+}
+
+void J3DModel::forgetMtx() {
+    dusk::interp::forget_mtx(mPresentationBase);
+    for (u16 i = 0; i < mModelData->getJointNum(); ++i) {
+        dusk::interp::forget_mtx(getAnmMtx(i));
+    }
+    for (u16 i = 0; i < mModelData->getWEvlpMtxNum(); ++i) {
+        dusk::interp::forget_mtx(getWeightAnmMtx(i));
+    }
 }
 #endif
 
