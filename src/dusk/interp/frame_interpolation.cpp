@@ -2,6 +2,7 @@
 
 #include "dusk/game_clock.h"
 #include "dusk/interp/lerp.h"
+#include "dusk/interp/particle.h"
 #include "dusk/interp/samples.h"
 
 #include "mtx.h"
@@ -105,6 +106,7 @@ void clear_interpolation_history() {
     s_currentRecording = {};
     clear_replacements();
     dusk::interp::clear_owned_samples();
+    dusk::interp::particle::clear();
     dusk::interp::clear_weather_samples();
     clear_callbacks();
     dusk::interp::camera_invalidate_snapshots();
@@ -123,6 +125,7 @@ void begin_sim_tick() {
     clear_callbacks();
     camera_on_sim_tick();
     ++s_simTickSeq;
+    particle::prune();
 }
 
 uint64_t sim_tick_seq() {

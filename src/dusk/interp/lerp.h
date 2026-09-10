@@ -54,6 +54,10 @@ inline void lerp(Mtx& out, const Mtx& lhs, const Mtx& rhs, float step) {
     }
 }
 
+inline Vec lerp(const Vec& lhs, const Vec& rhs, float step) {
+    return {lerp(lhs.x, rhs.x, step), lerp(lhs.y, rhs.y, step), lerp(lhs.z, rhs.z, step)};
+}
+
 inline JUtility::TColor lerp(const JUtility::TColor& lhs, const JUtility::TColor& rhs, float step) {
     return JUtility::TColor(
         lerp(lhs.r, rhs.r, step),
