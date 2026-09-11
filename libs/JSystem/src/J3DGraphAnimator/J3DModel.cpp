@@ -11,6 +11,7 @@
 
 #if TARGET_PC
 #include "dusk/interp/frame_interpolation.h"
+#include "dusk/interp/vertex.h"
 #endif
 
 #define J3D_ASSERTMSG(LINE, COND, MSG) JUT_ASSERT_MSG(LINE, (COND) != 0, MSG)
@@ -131,6 +132,7 @@ void J3DModel::setAnmMtx(int jointNo, Mtx m) {
 }
 
 void J3DModel::forgetMtx() {
+    dusk::interp::vertex::reset(&mVertexBuffer);
     dusk::interp::forget_mtx(mPresentationBase);
     for (u16 i = 0; i < mModelData->getJointNum(); ++i) {
         dusk::interp::forget_mtx(getAnmMtx(i));
@@ -494,7 +496,9 @@ void J3DModel::calc() {
         mCalcCallBack(this, 0);
     }
 
-#ifdef TARGET_PC
+#if TARGET_PC
+    dusk::interp::vertex::capture(&mVertexBuffer, mDeformData);
+
     for (u16 i = 0; i < mModelData->getJointNum(); ++i) {
         dusk::interp::record_final_mtx(getAnmMtx(i));
     }

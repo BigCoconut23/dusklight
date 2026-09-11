@@ -4,6 +4,7 @@
 #include "dusk/interp/lerp.h"
 #include "dusk/interp/particle.h"
 #include "dusk/interp/samples.h"
+#include "dusk/interp/vertex.h"
 
 #include "mtx.h"
 
@@ -106,11 +107,12 @@ void clear_interpolation_history() {
     s_previousRecording = {};
     s_currentRecording = {};
     clear_replacements();
-    dusk::interp::clear_owned_samples();
-    dusk::interp::particle::clear();
-    dusk::interp::clear_weather_samples();
     clear_callbacks();
     dusk::interp::camera_invalidate_snapshots();
+    dusk::interp::clear_owned_samples();
+    dusk::interp::clear_weather_samples();
+    dusk::interp::particle::clear();
+    dusk::interp::vertex::clear();
     s_presentationDepth = 0;
     s_cameraPresentationActive = false;
 }
@@ -128,6 +130,7 @@ void begin_sim_tick() {
     camera_on_sim_tick();
     ++s_simTickSeq;
     particle::prune();
+    vertex::prune();
 }
 
 uint64_t sim_tick_seq() {
