@@ -25,6 +25,7 @@
 #include <aurora/rmlui.hpp>
 #include <borealis/io.hpp>
 #include <fmt/format.h>
+#include <tracy/Tracy.hpp>
 
 #include <algorithm>
 #include <filesystem>
@@ -442,6 +443,7 @@ Document* top_document() noexcept {
 }
 
 void update() noexcept {
+    ZoneScopedN("Dusk UI update");
     mods::queue::update();
     mods::updates::update();
     if (!aurora::rmlui::is_initialized()) {
@@ -590,6 +592,14 @@ void set_text_content(Rml::Element* parent, const Rml::String& text) noexcept {
     clear_children(parent);
     if (!text.empty()) {
         append_text(parent, text);
+    }
+}
+
+void set_display(Rml::Element* element, Rml::Style::Display display) noexcept {
+    const Rml::Property value{display};
+    const auto* current = element->GetLocalProperty(Rml::PropertyId::Display);
+    if (current == nullptr || *current != value) {
+        element->SetProperty(Rml::PropertyId::Display, value);
     }
 }
 

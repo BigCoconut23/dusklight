@@ -20,6 +20,7 @@
 
 #include <SDL3/SDL_misc.h>
 #include <borealis/http.hpp>
+#include <tracy/Tracy.hpp>
 
 #include <algorithm>
 #include <array>
@@ -324,6 +325,7 @@ public:
     }
 
     void update() override {
+        ZoneScopedN("Mod browser detail update");
         if (mFetch && mFetch.ready()) {
             try {
                 if (auto result = mFetch.try_take()) {
@@ -572,8 +574,9 @@ public:
         }
         if (mProgress != nullptr) {
             mProgress->SetAttribute("value", progress);
-            mProgress->SetProperty(
-                "display", state == "idle" || state == "installed" ? "none" : "block");
+            set_display(mProgress, state == "idle" || state == "installed" ?
+                                       Rml::Style::Display::None :
+                                       Rml::Style::Display::Block);
         }
         set_disabled(disabled);
         Button::update();
@@ -1092,6 +1095,7 @@ void ModBrowser::cycle_sort() {
 }
 
 void ModBrowser::update() {
+    ZoneScopedN("Mod browser update");
     const auto loaderGeneration = mods::ModLoader::instance().generation();
     if (loaderGeneration != mLoaderGeneration) {
         mLoaderGeneration = loaderGeneration;
@@ -1111,6 +1115,7 @@ void ModBrowser::update() {
         mFetch = {};
     }
     if (mRebuildRequested) {
+        ZoneScopedN("Mod browser rebuild");
         mRebuildRequested = false;
         auto* viewport = mContentRoot->QuerySelector("catalog-viewport");
         const float scrollTop = viewport ? viewport->GetScrollTop() : 0;

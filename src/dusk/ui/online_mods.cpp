@@ -111,12 +111,14 @@ public:
         const bool canPause = (!item->local && item->state == State::Queued) ||
                               item->state == State::Downloading || item->state == State::Paused ||
                               item->state == State::Retrying || failed;
-        mPause->root()->SetProperty("display", canPause ? "flex" : "none");
+        set_display(
+            mPause->root(), canPause ? Rml::Style::Display::Flex : Rml::Style::Display::None);
         mPause->set_icon(failed                       ? "refresh" :
                          item->state == State::Paused ? "play_arrow" :
                                                         "pause");
         mPause->set_label(failed ? "Retry" : item->state == State::Paused ? "Resume" : "Pause");
-        mCancel->root()->SetProperty("display", item->state == State::Handoff ? "none" : "flex");
+        set_display(mCancel->root(),
+            item->state == State::Handoff ? Rml::Style::Display::None : Rml::Style::Display::Flex);
         mCancel->set_label(failed ? "Dismiss" : is_completed(item->state) ? "Clear" : "Cancel");
         Component::update();
     }
@@ -161,7 +163,8 @@ public:
         }
         mResume = !canPause && canResume;
         mPause->set_text(mResume ? "Resume all" : "Pause all");
-        mPause->root()->SetProperty("display", canPause || canResume ? "block" : "none");
+        set_display(mPause->root(),
+            canPause || canResume ? Rml::Style::Display::Block : Rml::Style::Display::None);
         Component::update();
     }
 

@@ -25,6 +25,7 @@
 
 #include <fmt/format.h>
 #include <fmt/ranges.h>
+#include <tracy/Tracy.hpp>
 
 #include <algorithm>
 #include <cstddef>
@@ -597,6 +598,7 @@ void ModsWindow::mark_current_entry() {
 }
 
 void ModsWindow::update() {
+    ZoneScopedN("Mod manager update");
     auto& loader = mods::ModLoader::instance();
     bool dirty = loader.generation() != mLoaderGeneration;
     if (dirty) {
@@ -630,6 +632,7 @@ void ModsWindow::update() {
     dirty |= queueItems != mQueueItems;
     if (dirty) {
         mContextMenu.dismiss();
+        ZoneScopedN("Mod manager rebuild");
         const auto previousModId = mSelectedModId;
         std::optional<Rml::Property> previousBannerFilter;
         if (auto* image = mContentRoot->QuerySelector("mod-header-image")) {

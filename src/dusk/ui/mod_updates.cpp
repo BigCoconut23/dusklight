@@ -61,7 +61,7 @@ public:
             mAllLabel = label;
         }
         mAll->set_disabled(count == 0);
-        mAll->root()->SetProperty("display", count ? "flex" : "none");
+        set_display(mAll->root(), count ? Rml::Style::Display::Flex : Rml::Style::Display::None);
         mCheck->set_disabled(mods::updates::state() == mods::updates::State::Checking);
         Component::update();
     }
