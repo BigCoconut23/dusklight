@@ -11,6 +11,7 @@
 
 #if TARGET_PC
 #include "dusk/interp/frame_interpolation.h"
+#include "dusk/interp/material.h"
 #include "dusk/interp/vertex.h"
 #endif
 
@@ -103,12 +104,6 @@ s32 J3DModel::entryModelData(J3DModelData* pModelData, u32 mdlFlags, u32 mtxNum)
 }
 
 #if TARGET_PC
-void J3DModel::interp_callback(void* pUserWork) {
-    J3DModel* i_this = static_cast<J3DModel*>(pUserWork);
-    i_this->calcMaterial();
-    i_this->diff();
-}
-
 void J3DModel::calc_presentation_base_mtx() {
     Mtx identity;
     MTXIdentity(identity);
@@ -327,7 +322,16 @@ void J3DModel::calcMaterial() {
             material->getMaterialAnm()->calc(material);
         }
 
-        material->calc(getAnmMtx(material->getJoint()->getJntNo()));
+        MtxP jointMtx = getAnmMtx(material->getJoint()->getJntNo());
+#if TARGET_PC
+        Mtx presentedJoint;
+        if (dusk::interp::is_presentation_active() &&
+            dusk::interp::lookup_replacement(jointMtx, presentedJoint))
+        {
+            jointMtx = presentedJoint;
+        }
+#endif
+        material->calc(jointMtx);
     }
 }
 
@@ -536,7 +540,7 @@ void J3DModel::entry() {
 
 #if TARGET_PC
     if (mModelData->needsInterpCallBack()) {
-        dusk::interp::add_interpolation_callback(&J3DModel::interp_callback, this);
+        dusk::interp::material::record_model(this);
     }
 #endif
 }

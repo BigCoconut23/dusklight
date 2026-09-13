@@ -2,6 +2,7 @@
 
 #include "dusk/game_clock.h"
 #include "dusk/interp/lerp.h"
+#include "dusk/interp/material.h"
 #include "dusk/interp/particle.h"
 #include "dusk/interp/samples.h"
 #include "dusk/interp/vertex.h"
@@ -84,6 +85,7 @@ void interpolate_replacements() {
 struct InterpolationCallBackWork {
     dusk::interp::InterpolationCallBack pCallBack;
     void* pUserWork;
+    std::shared_ptr<void> owner;
 };
 
 std::vector<InterpolationCallBackWork> s_interpolationCallBackWork;
@@ -111,6 +113,7 @@ void clear_interpolation_history() {
     dusk::interp::camera_invalidate_snapshots();
     dusk::interp::clear_owned_samples();
     dusk::interp::clear_weather_samples();
+    dusk::interp::material::clear();
     dusk::interp::particle::clear();
     dusk::interp::vertex::clear();
     s_presentationDepth = 0;
@@ -129,6 +132,7 @@ void begin_sim_tick() {
     clear_callbacks();
     camera_on_sim_tick();
     ++s_simTickSeq;
+    material::prune();
     particle::prune();
     vertex::prune();
 }
@@ -295,6 +299,14 @@ void add_interpolation_callback(InterpolationCallBack pCallBack, void* pUserWork
     }
 
     s_interpolationCallBackWork.push_back({pCallBack, pUserWork});
+}
+
+void add_interpolation_callback(InterpolationCallBack pCallBack, void* pUserWork,
+                                std::shared_ptr<void> owner) {
+    if (!should_capture() || is_presentation_active() || pCallBack == nullptr) {
+        return;
+    }
+    s_interpolationCallBackWork.push_back({pCallBack, pUserWork, std::move(owner)});
 }
 
 }  // namespace dusk::interp

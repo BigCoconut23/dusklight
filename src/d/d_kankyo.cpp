@@ -35,6 +35,7 @@
 
 #if TARGET_PC
 #include "dusk/game_clock.h"
+#include "dusk/interp/material.h"
 #include "dusk/imgui/ImGuiBloomWindow.hpp"
 static f32 timeScale = 1.0f;
 #endif
@@ -4479,6 +4480,7 @@ static void setLightTevColorType_MAJI_sub(J3DMaterial* material_p, dKy_tevstr_c*
                 }
             }
         }
+        IF_DUSK(dusk::interp::material::record_light_view(material_p));
     }
 }
 

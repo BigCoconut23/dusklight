@@ -79,7 +79,6 @@ public:
     virtual ~J3DModel() {}
 
 #if TARGET_PC
-    static void interp_callback(void* pUserWork);
     void calc_presentation_base_mtx();
     void prepare_presentation_view();
 #endif

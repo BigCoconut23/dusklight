@@ -3,6 +3,7 @@
 #include <dolphin/mtx.h>
 
 #include <cstdint>
+#include <memory>
 
 #ifdef __cplusplus
 namespace dusk::interp {
@@ -35,6 +36,7 @@ bool is_presentation_active();
 
 typedef void (*InterpolationCallBack)(void* pUserWork);
 void add_interpolation_callback(InterpolationCallBack pCallBack, void* pUserWork);
+void add_interpolation_callback(InterpolationCallBack pCallBack, void* pUserWork, std::shared_ptr<void> owner);
 
 }  // namespace dusk::interp
 #endif
