@@ -393,9 +393,9 @@ static void FillDecodeBuf(JASDsp::TChannel& channel, ChannelAuxData& aux, int ne
 static BiquadCoeffs RemapBiquad32to48(float b1, float b2, float a1, float a2) {
     using cplx = std::complex<f64>;
 
-    constexpr f64 kOldRate = 32000.0;
-    constexpr f64 kNewRate = f64(SampleRate);
-    constexpr f64 kGamma = kOldRate / kNewRate;
+    constexpr auto kOldRate = 32000.0;
+    constexpr auto kNewRate = f64(SampleRate);
+    constexpr auto kGamma = kOldRate / kNewRate;
 
     if (b1 == 0 && b2 == 0 && a1 == 0 && a2 == 0) {
         return {0, 0, 0, 0};
@@ -416,12 +416,12 @@ static BiquadCoeffs RemapBiquad32to48(float b1, float b2, float a1, float a2) {
     cplx p1, p2;
     if (disc >= 0.0) {
         f64 sq = std::sqrt(disc);
-        p1 = { (a1 + sq) * 0.5, 0.0 };
-        p2 = { (a1 - sq) * 0.5, 0.0 };
+        p1 = {(a1 + sq) * 0.5, 0.0};
+        p2 = {(a1 - sq) * 0.5, 0.0};
     } else {
         f64 sq = std::sqrt(-disc);
-        p1 = { a1 * 0.5,  sq * 0.5 };
-        p2 = { a1 * 0.5, -sq * 0.5 };
+        p1 = {a1 * 0.5,  sq * 0.5};
+        p2 = {a1 * 0.5, -sq * 0.5};
     }
     cplx p1n = mapPoint(p1);
     cplx p2n = mapPoint(p2);
@@ -445,7 +445,7 @@ static BiquadCoeffs RemapBiquad32to48(float b1, float b2, float a1, float a2) {
 
     f64 K = (hOldRef / shapeNewRef).real();
 
-    return { float(K), float(-K * z0n), float(a1n), float(a2n) };
+    return {float(K), float(-K * z0n), float(a1n), float(a2n)};
 }
 
 /**
@@ -504,10 +504,10 @@ static void RenderChannel(
         std::span newCoefs{channel.iir_filter_params, 4};
         if (!std::ranges::equal(newCoefs, aux.curBiquadCoefs)) {
             aux.remappedBiquadCoefs = RemapBiquad32to48(
-                newCoefs[0] / 32768.0,
-                newCoefs[1] / 32768.0,
-                newCoefs[2] / 32768.0,
-                newCoefs[3] / 32768.0
+                newCoefs[0] / 32768.0f,
+                newCoefs[1] / 32768.0f,
+                newCoefs[2] / 32768.0f,
+                newCoefs[3] / 32768.0f
             );
             std::ranges::copy(newCoefs, aux.curBiquadCoefs.begin());
         }
