@@ -26,11 +26,21 @@ bool s_timingModeInitialized = false;
 bool s_previousSeparatePresentation = false;
 bool s_previousInterpolating = false;
 bool s_previousTimeStopped = false;
+float s_presentationDtSeconds = kUiInitialDt;
 
 constexpr game_clock::duration kSimPeriodDuration =
     std::chrono::duration_cast<game_clock::duration>(std::chrono::duration<float>(kSimPeriod));
 constexpr native_clock::duration kAbnormalGapResetThreshold = std::chrono::milliseconds(250);
 constexpr int kMaxSimTicksPerFrame = static_cast<int>(aurora::time::kMaximumTimeScale) * 4;
+
+float ui_dt() {
+    if (s_simTickActive) {
+        return kSimPeriod;
+    }
+
+    const float maximumDt = kUiMaximumDt * aurora::time::scale();
+    return std::clamp(s_presentationDtSeconds, 0.0f, maximumDt);
+}
 }  // namespace
 
 void initialize() {
@@ -76,6 +86,7 @@ const FrameTiming& advance() {
         .dt = std::chrono::duration<float>(gameFrameGap).count(),
         .presentationEpoch = s_presentationEpoch,
     };
+    s_presentationDtSeconds = out.dt;
 
     const float timeScale = aurora::time::scale();
     const bool interpolating =
@@ -147,11 +158,19 @@ bool is_sim_frame() {
     return !g_frameTiming.separatePresentation || s_simTickActive;
 }
 
+bool is_presentation_frame() {
+    return !g_frameTiming.separatePresentation || !s_simTickActive;
+}
+
 float sample_interpolation_step() {
     const float step =
         std::chrono::duration<float>(game_clock::now() - s_currentSnapshotTime).count() /
         kSimPeriod;
     return std::clamp(step, 0.0f, 1.0f);
+}
+
+float original_frames() {
+    return ui_dt() / kSimPeriod;
 }
 
 float consume_interval(const void* consumer) {
