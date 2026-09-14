@@ -95,6 +95,10 @@ static bool InitSDL3Output() {
 }
 
 void dusk::audio::Initialize() {
+    // enable 48 kHz mode
+    // this will scale voice pitch and track tempo accordingly
+    JASDriver::setOutputRate(static_cast<JASOutputRate>(-1));
+
     InitSDL3Output();
     DspInit();
 
