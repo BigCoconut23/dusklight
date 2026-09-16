@@ -49,21 +49,35 @@ export type TextureModule = {
     register_data: (key: TextureKey, data: TextureData) -> TextureHandle,
 }
 
+export type UiRowDesc = {align: ("start" | "center" | "end" | "space_between")?, wrap: boolean?}
+export type UiControlOption = {label: string, enabled: boolean?}
+export type UiContextMenuItem = {
+    label: string, icon: string?, on_pressed: (() -> ())?, enabled: boolean?,
+    selected: boolean?, destructive: boolean?, separator_before: boolean?,
+}
+export type UiContextMenu = {close: (self: UiContextMenu) -> ()}
 export type UiElement = {
-    add_section: (self: UiElement, title: string) -> (),
-    add_text: (self: UiElement, text: string) -> UiElement,
-    add_rml: (self: UiElement, rml: string) -> UiElement,
-    add_progress: (self: UiElement, value: number) -> UiElement,
     add_control: (self: UiElement, desc: UiControlDesc) -> UiElement,
     add_group: (self: UiElement, target: UiElement, desc: UiGroupDesc) -> UiElement,
     add_list: (self: UiElement, desc: UiListDesc) -> UiList,
-    set_text: (self: UiElement, text: string) -> (),
-    set_rml: (self: UiElement, rml: string) -> (),
-    set_progress: (self: UiElement, value: number) -> (),
+    add_progress: (self: UiElement, value: number) -> UiElement,
+    add_rml: (self: UiElement, rml: string) -> UiElement,
+    add_row: (self: UiElement, desc: UiRowDesc) -> UiElement,
+    add_section: (self: UiElement, title: string) -> (),
+    add_text: (self: UiElement, text: string) -> UiElement,
+    focus: (self: UiElement) -> boolean,
     set_class: (self: UiElement, name: string, active: boolean) -> (),
+    set_icon: (self: UiElement, icon: string) -> (),
+    set_label: (self: UiElement, label: string) -> (),
+    set_options: (self: UiElement, options: {UiControlOption}) -> (),
+    set_progress: (self: UiElement, value: number) -> (),
+    set_rml: (self: UiElement, rml: string) -> (),
+    set_text: (self: UiElement, text: string) -> (),
+    set_tooltip: (self: UiElement, text: string?) -> (),
+    set_visible: (self: UiElement, visible: boolean) -> (),
 }
 export type UiControlDesc = {
-    kind: "button" | "toggle" | "number" | "string" | "select" | "color" | "group" | "file_picker",
+    kind: "button" | "toggle" | "number" | "string" | "select" | "color" | "group" | "file_picker" | "icon_button" | "dropdown",
     label: string,
     help_rml: string?,
     config_var: ConfigVar<any>?,
@@ -85,6 +99,9 @@ export type UiControlDesc = {
     string_set_mode: ("commit" | "change")?,
     file_filters: {{name: string, pattern: string}}?,
     directory_mode: boolean?,
+    icon: string?,
+    tooltip: string?,
+    option_enabled: {boolean}?,
 }
 export type UiGroupDesc = { label: string, build: (pane: UiElement) -> () }
 export type UiListItem = { key: IntegerInput, label: string }
@@ -109,6 +126,7 @@ export type UiTabDesc = {
     update: (() -> ())?,
 }
 export type UiModule = {
+    context_menu_push: (anchor: UiElement, desc: {items: {UiContextMenuItem}}) -> UiContextMenu,
     register_mods_panel: (desc: {build: (panel: UiElement) -> (), update: (() -> ())?}) -> (),
     window_push: (desc: {tabs: {UiTabDesc}, rcss: string?, on_closed: ((window: UiWindow) -> ())?}) -> UiWindow,
     dialog_push: (desc: {
@@ -150,6 +168,85 @@ export type HostModule = {
 }
 export type ResourceModule = { load: (relativePath: string) -> string }
 
+--
+-- audio_res
+--
+
+export type AudioWaveFormat = "adpcm4" | "adpcm2" | "pcm8" | "pcm16"
+
+export type AudioRawWave = {
+    format: AudioWaveFormat,
+    sample_rate: number,
+    sample_value_last: number | nil,
+    sample_value_penult: number | nil
+}
+
+export type AudioWaveInfo = {
+    base_key: number | nil,
+    loop: boolean | nil,
+    loop_start_sample: number | nil,
+    loop_end_sample: number | nil,
+    raw_wave: AudioRawWave | nil
+}
+
+export type AudioWaveHandle = {
+    unregister: (self: AudioWaveHandle) -> (),
+}
+
+export type AudioWaveBank = "sound_effects" | "music_samples"
+
+export type AudioSoundTableEffectInfo = {
+    priority: number,
+    volume: number,
+    pitch: number,
+    always_max_priority: boolean,
+    ignore_distance_volume: boolean,
+    ignore_distance_fx_mix: boolean,
+    ignore_pan: boolean,
+    ignore_dolby: boolean,
+    random_volume: number,
+    random_pitch: number,
+    doppler_power: number,
+    volume_dist_class: number,
+    clamp_min_volume: boolean,
+    cull_at_max_distance: boolean,
+}
+
+export type SoundEffectCategory = "system_se" | "player_voice" | "player_se" | "footnote_se" | "collision_se" | "chara_voice" | "chara_se" | "enemy_se" | "object_se" | "env_se"
+
+export type AudioSoundTableHandle = {
+    unregister: (self: AudioSoundTableHandle) -> ()
+}
+
+export type StreamPan = "center" | "left" | "right"
+
+export type AudioSoundTableStreamInfo = {
+    priority: number,
+    volume: number,
+    pan_parameters: {StreamPan}, -- max STREAM_MAX_CHILDREN elems
+    stop_on_scene_change: boolean,
+}
+
+export type AudioResModule = {
+    -- wsys
+    DEFAULT_KEY: number,
+    default_wave_info: () -> AudioWaveInfo,
+    replace_wave: (bank: AudioWaveBank, wave_id: number, file: string, info: AudioWaveInfo | nil) -> AudioWaveHandle,
+    add_wave: (bank: AudioWaveBank, file: string, info: AudioWaveInfo | nil) -> (number, AudioWaveHandle),
+
+    -- bst
+    default_effect_info: () -> AudioSoundTableEffectInfo,
+    replace_sound_table_effect: (category: SoundEffectCategory, effect_id: number, info: AudioSoundTableEffectInfo | nil) -> AudioSoundTableHandle,
+    add_sound_table_effect: (category: SoundEffectCategory, info: AudioSoundTableEffectInfo | nil) -> (number, AudioSoundTableHandle),
+
+    STREAM_MAX_CHILDREN: number,
+    default_stream_info: () -> AudioSoundTableStreamInfo,
+    replace_sound_table_stream: (stream_id: number, file_path: string, info: AudioSoundTableStreamInfo | nil) -> AudioSoundTableHandle,
+    add_sound_table_stream: (file_path: string, info: AudioSoundTableStreamInfo | nil) -> (number, AudioSoundTableHandle),
+}
+
+
+
 declare function require(path: "dusklight.log"): LogModule
 declare function require(path: "dusklight.host"): HostModule
 declare function require(path: "dusklight.config"): ConfigModule
@@ -157,4 +254,5 @@ declare function require(path: "dusklight.resource"): ResourceModule
 declare function require(path: "dusklight.overlay"): OverlayModule
 declare function require(path: "dusklight.texture"): TextureModule
 declare function require(path: "dusklight.ui"): UiModule
+declare function require(path: "dusklight.audio_res"): AudioResModule
 declare function require(path: string): any

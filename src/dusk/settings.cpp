@@ -25,13 +25,13 @@ UserSettings g_userSettings = {
     },
 
     .audio = {
+        .outputMode {"audio.outputMode", AudioOutputMode::StereoSpeakers},
         .masterVolume {"audio.masterVolume", 60},
         .mainMusicVolume {"audio.mainMusicVolume", 100},
         .subMusicVolume {"audio.subMusicVolume", 100},
         .soundEffectsVolume {"audio.soundEffectsVolume", 100},
         .fanfareVolume {"audio.fanfareVolume", 100},
         .enableReverb {"audio.enableReverb", true},
-        .enableHrtf {"audio.enableHrtf", false},
         .menuSounds {"audio.menuSounds", true},
     },
 
@@ -149,6 +149,7 @@ UserSettings g_userSettings = {
         .fastSpinner {"game.fastSpinner", false},
         .armorRupeeDrain {"game.armorRupeeDrain", MagicArmorMode::NORMAL},
         .invincibleEnemies {"game.invincibleEnemies", false},
+        .easyQuickSpin {"game.easyQuickSpin", false},
 
         // Technical
         .restoreWiiGlitches {"game.restoreWiiGlitches", false},
@@ -177,6 +178,7 @@ UserSettings g_userSettings = {
         .skipPreLaunchUI {"backend.skipPreLaunchUI", false},
         .wasPresetChosen {"backend.wasPresetChosen", false},
         .checkForUpdates {"backend.checkForUpdates", true},
+        .checkForModUpdates {"backend.checkForModUpdates", true},
         .cardFileType {"backend.cardFileType", static_cast<int>(CARD_GCIFOLDER)},
         .enableAdvancedSettings {"backend.enableAdvancedSettings", false},
     },
@@ -257,13 +259,13 @@ void registerSettings() {
         [](const int&, const int&) { dusk::ui::apply_scale(); });
 
     // Audio
+    Register(g_userSettings.audio.outputMode);
     Register(g_userSettings.audio.masterVolume);
     Register(g_userSettings.audio.mainMusicVolume);
     Register(g_userSettings.audio.subMusicVolume);
     Register(g_userSettings.audio.soundEffectsVolume);
     Register(g_userSettings.audio.fanfareVolume);
     Register(g_userSettings.audio.enableReverb);
-    Register(g_userSettings.audio.enableHrtf);
     Register(g_userSettings.audio.menuSounds);
 
     // Game
@@ -355,6 +357,8 @@ void registerSettings() {
     Register(g_userSettings.game.superClawshot);
     Register(g_userSettings.game.alwaysGreatspin);
     Register(g_userSettings.game.invincibleEnemies);
+    Register(g_userSettings.game.easyQuickSpin);
+
     Register(g_userSettings.game.enableFrameInterpolation);
     Register(g_userSettings.game.enableGyroAim);
     Register(g_userSettings.game.enableGyroRollgoal);
@@ -390,6 +394,7 @@ void registerSettings() {
     Register(g_userSettings.backend.skipPreLaunchUI);
     Register(g_userSettings.backend.wasPresetChosen);
     Register(g_userSettings.backend.checkForUpdates);
+    Register(g_userSettings.backend.checkForModUpdates);
     Register(g_userSettings.backend.cardFileType);
     Register(g_userSettings.backend.enableAdvancedSettings);
 

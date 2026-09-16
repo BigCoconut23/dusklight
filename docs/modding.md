@@ -852,8 +852,9 @@ per-window RCSS. A non-`MOD_OK` result from `build`/`update` fails your mod, as 
 callback.
 
 **Controls:** `pane_add_control` adds an input row described by a `UiControlDesc`: `UI_CONTROL_BUTTON`,
-`UI_CONTROL_GROUP`, `UI_CONTROL_TOGGLE`, `UI_CONTROL_NUMBER`, `UI_CONTROL_STRING`, `UI_CONTROL_SELECT`, or
-`UI_CONTROL_COLOR`. Values bind with callbacks or directly to a config var.
+`UI_CONTROL_GROUP`, `UI_CONTROL_TOGGLE`, `UI_CONTROL_NUMBER`, `UI_CONTROL_STRING`, `UI_CONTROL_SELECT`,
+`UI_CONTROL_COLOR`, `UI_CONTROL_FILE_PICKER`, `UI_CONTROL_ICON_BUTTON`, or `UI_CONTROL_DROPDOWN`. Bind values with
+callbacks or directly to a config var.
 
 ```cpp
 UiControlDesc control = UI_CONTROL_DESC_INIT;
@@ -862,17 +863,31 @@ control.label = "Enable rainbows";
 control.help_rml = "Shown in the help pane while focused.";
 control.binding = UI_BINDING_CONFIG_VAR;
 control.config_var = myBoolVar;  // from svc_config->register_var
-svc_ui->pane_add_control(mod_ctx, leftPane, &control, nullptr);
+svc_ui->pane_add_control(mod_ctx, pane, &control, nullptr);
+
+UiRowDesc rowDesc = UI_ROW_DESC_INIT;
+rowDesc.align = UI_ROW_ALIGN_CENTER;
+UiElementHandle row = 0;
+svc_ui->pane_add_row(mod_ctx, pane, &rowDesc, &row);
+
+UiControlDesc play = UI_CONTROL_DESC_INIT;
+play.kind = UI_CONTROL_ICON_BUTTON;
+play.icon = "play_arrow";
+play.label = "Play";
+play.on_pressed = play_track;
+svc_ui->pane_add_control(mod_ctx, row, &play, nullptr);
 ```
 
 `UI_BINDING_CONFIG_VAR` wires persistence, change notifications, and the modified indicator automatically. The var
-type must match the control: `TOGGLE` = bool, `NUMBER` and `SELECT` = int, `STRING` and `COLOR` = string. Float vars
-are not bindable; use callbacks and convert. `help_rml` and `SELECT` option lists render in a help pane, so `SELECT`
-controls are only available inside window tabs.
+type must match the control: `TOGGLE` = bool, `NUMBER`, `SELECT`, and `DROPDOWN` = int, `STRING`, `COLOR`, and
+`FILE_PICKER` = string. Float vars are not bindable; use callbacks and convert. `help_rml` and `SELECT` option lists
+render in a help pane, so `SELECT` controls are only available inside window tabs.
 
 `pane_add_group` adds a category button to a window tab's left pane. Focusing the button clears the paired right pane
 and calls the group's build callback with that pane, which is useful for organizing related controls without adding
 more tabs.
+
+`pane_add_row` adds a horizontal container that other controls may be nested inside.
 
 **Lists:** `pane_add_list` adds a scrollable virtualized list of items that can be efficiently updated and filtered.
 Keys must be unique and remain stable across replacements.
@@ -1371,12 +1386,16 @@ HookshotHit::g_orig(link, atObjInf, target, tgObjInf);  // call through to the o
 
 Class member functions must include `Class*` as the first argument.
 
-Two spellings work on every platform:
+There are three ways to refer to a function by symbol:
 
-- **Display names** (`daAlink_c::posMove`, `fapGm_Before`): the qualified name with no parameter list. They carry no
-  signature, so overload sets (and file-local statics sharing a name) return `MOD_CONFLICT`.
-- **Decorated names** (`_ZN9daAlink_c7posMoveEv` / `?posMove@daAlink_c@@...`): the platform's mangled spelling in
-  dlsym convention (no Mach-O leading underscore). The escape hatch for overloads.
+- **Display names** (`daAlink_c::posMove`, `fapGm_Before`): the qualified name with no parameter list. Since they have
+  no signature, overloads (and file-local statics sharing a name) return `MOD_CONFLICT`.
+- **Decorated names** (`_ZN9daAlink_c7posMoveEv` / `?posMove@daAlink_c@@...`): the platform's mangled name, like you'd
+  pass to dlsym(). Useful for overloads, but must be specified separately for Windows (`#ifdef _MSVC_LANG`) and other
+  platforms.
+- **Translation unit aliases** (`src/d/actor/d_a_b_gnd.cpp#action`): the source path relative to the repository root,
+  followed by `#` and then the function display name without parameters. This allows disambiguating static functions
+  with the same name across different source files.
 
 Installing fails with `MOD_UNAVAILABLE` when it didn't resolve (missing, ambiguous, or no symbol manifest). Unlike
 `DEFINE_HOOK`, the signature is **not** compiler-checked: a mismatched signature will corrupt the
