@@ -513,7 +513,6 @@ int daMidna_c::createHeap() {
                 ResTIMG* timg = tex->getResTIMG(i);
                 timg->mipmapEnabled = false;
                 tex->initGXTexObj(i);
-                modelData->makeSharedDL();
                 break;
             }
         }
