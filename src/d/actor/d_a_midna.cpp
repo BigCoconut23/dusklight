@@ -512,7 +512,7 @@ int daMidna_c::createHeap() {
             if (name != NULL && strcmp(name, "midona_eye") == 0) {
                 ResTIMG* timg = tex->getResTIMG(i);
                 timg->mipmapEnabled = false;
-                tex->initGXTexObj(i);
+                tex->loadGXTexObj(i);
                 break;
             }
         }
