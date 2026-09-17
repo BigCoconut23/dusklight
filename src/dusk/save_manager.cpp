@@ -766,24 +766,14 @@ Result apply_artifact(const Storage& storage, const SaveIdentity& identity,
 }  // namespace
 
 std::optional<SaveIdentity> identity_for_disc(const iso::DiscInfo& info, std::string saveName) {
-    if (info.platform != iso::Platform::GameCube || !utils::is_valid_save_name(saveName)) {
+    if (info.gameId.size() != 6 || !utils::is_valid_save_name(saveName)) {
         return std::nullopt;
     }
-    std::string game;
-    switch (info.region) {
-    case iso::Region::NorthAmerica:
-        game = "GZ2E";
-        break;
-    case iso::Region::Europe:
-        game = "GZ2P";
-        break;
-    case iso::Region::Japan:
-        game = "GZ2J";
-        break;
-    case iso::Region::Korea:
-        return std::nullopt;
-    }
-    return SaveIdentity{.maker = "01", .game = std::move(game), .saveName = std::move(saveName)};
+    return SaveIdentity{
+        .maker = info.gameId.substr(4),
+        .game = info.gameId.substr(0, 4),
+        .saveName = std::move(saveName),
+    };
 }
 
 std::string card_file_stem(

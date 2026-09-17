@@ -177,14 +177,14 @@ bool installed_mod(std::string_view id) {
 }
 
 void export_artifact(save_manager::ExportArtifact artifact, std::string pattern) {
+    borealis::file_select::ExportOptions options{
+        .parentWindow = aurora::window::get_sdl_window(),
+        .sourceLocation = borealis::io::fs_path_to_string(artifact.path),
+        .suggestedName = artifact.suggestedName,
+        .filters = {{"Save file", std::move(pattern)}},
+    };
     borealis::file_select::export_file(
-        {
-            .parentWindow = aurora::window::get_sdl_window(),
-            .sourceLocation = borealis::io::fs_path_to_string(artifact.path),
-            .suggestedName = artifact.suggestedName,
-            .filters = {{"Save file", std::move(pattern)}},
-        },
-        [artifact = std::move(artifact)](borealis::file_select::Result result) {
+        std::move(options), [artifact = std::move(artifact)](borealis::file_select::Result result) {
             save_manager::remove_temporary_export(artifact);
             if (result.status != borealis::file_select::Status::Selected &&
                 result.status != borealis::file_select::Status::Canceled)
@@ -936,8 +936,7 @@ void add_save_files_control(Pane& leftPane, Pane& rightPane) {
                 const auto& state = prelaunch_state();
                 return !state.configuredDiscCanLaunch || data::is_data_path_restart_pending() ||
                        (!state.activeDiscPath.empty() &&
-                           state.configuredDiscPath != state.activeDiscPath) ||
-                       state.configuredDiscInfo.platform != iso::Platform::GameCube;
+                           state.configuredDiscPath != state.activeDiscPath);
             },
     });
     leftPane.register_control(button.on_pressed([] {
