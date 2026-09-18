@@ -104,6 +104,9 @@ std::string make_url(const Query& query) {
             append_query(url, "platform", platform);
         }
     }
+    if (!query.includeNatives) {
+        append_query(url, "include_natives", "false");
+    }
     return url;
 }
 
@@ -433,6 +436,7 @@ borealis::http::Request make_request(std::string url) {
         .headers =
             {
                 {.name = "User-Agent", .value = borealis::user_agent(dusk::AppInfo)},
+                {.name = "X-Dusklight-Version", .value = BOREALIS_APP_VERSION},
                 {.name = "Accept", .value = "application/json"},
             },
         .connectTimeout = 10s,
@@ -455,6 +459,15 @@ std::string_view platform() noexcept {
     return catalog_platform();
 }
 
+bool supports_native_installs() noexcept {
+#if defined(__APPLE__) && (TARGET_OS_IOS || TARGET_OS_TV)
+    // Native libraries must be bundled and signed with the app.
+    return false;
+#else
+    return true;
+#endif
+}
+
 borealis::Task<UpdateFetchResult> fetch_updates(
     UpdateEnvironment environment, std::vector<std::string> targets) {
     json platformValue = environment.platform;
@@ -464,6 +477,7 @@ borealis::Task<UpdateFetchResult> fetch_updates(
     json body{
         {"app_version", BOREALIS_APP_VERSION},
         {"platform", platformValue},
+        {"include_natives", supports_native_installs()},
         {"mod_abi", environment.abi},
         {"targets", targets},
         {"services", json::array()},

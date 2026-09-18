@@ -415,6 +415,10 @@ catalog-install-control small.failed {
     color: var(--color-error);
 }
 
+catalog-install-control small.requires-bundling {
+    white-space: normal;
+}
+
 catalog-detail-identity {
     display: flex;
     position: relative;
