@@ -117,7 +117,7 @@ void set_image(Rml::Element* element, const mods::catalog::Image& image, uint32_
     if (!source.empty()) {
         source = remote_image_source(source, image.width, image.height);
         element->SetProperty(
-            "decorator", fmt::format(R"(image("{}" {} center center))", escape(source), fit));
+            "decorator", fmt::format(R"(image-effects("{}" {}))", escape(source), fit));
         element->SetClass("has-image", true);
     }
 }
@@ -386,6 +386,7 @@ private:
     }
 
     void build_content(Rml::Element* content) {
+        mRoot->SetClass("image-header", mDetail && (mDetail->mod.banner || mDetail->mod.icon));
         if (mDetail) {
             auto* scroll = append(content, "detail-scroll");
             add_child<DetailContent>(scroll, *this, *mDetail).focus();
