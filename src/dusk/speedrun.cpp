@@ -59,6 +59,7 @@ void resetForSpeedrunMode() {
     getSettings().game.instantDeath.setSpeedrunValue(false);
     getSettings().game.noHeartDrops.setSpeedrunValue(false);
     getSettings().game.holdToMash.setSpeedrunValue(false);
+    getSettings().game.fastTransitions.setSpeedrunValue(false);
     getSettings().game.autoSave.setSpeedrunValue(false);
     getSettings().game.sunsSong.setSpeedrunValue(false);
 
@@ -72,7 +73,7 @@ void resetForSpeedrunMode() {
     getSettings().game.enableIndefiniteItemDrops.setSpeedrunValue(false);
     getSettings().game.moonJump.setSpeedrunValue(false);
     getSettings().game.superClawshot.setSpeedrunValue(false);
-    getSettings().game.alwaysGreatspin.setSpeedrunValue(false);
+    getSettings().game.alwaysGreatspin.setSpeedrunValue(AlwaysGreatspinMode::OFF);
     getSettings().game.enableFastIronBoots.setSpeedrunValue(false);
     getSettings().game.canTransformAnywhere.setSpeedrunValue(false);
     getSettings().game.fastRoll.setSpeedrunValue(false);

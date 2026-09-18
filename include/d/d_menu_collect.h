@@ -129,7 +129,6 @@ public:
     J2DPicture* getBlackTex() { return mpBlackTex; }
     u8 getSubWindowOpenCheck() { return mSubWindowOpenCheck; }
 
-// private:
     /* 0x004 */ JKRExpHeap* mpHeap;
     /* 0x008 */ JKRExpHeap* mpSubHeap;
     /* 0x00C */ void* field_0xc;
@@ -195,6 +194,9 @@ public:
     /* 0x25F */ u8 field_0x25f;
     /* 0x260 */ u8 field_0x260;
     /* 0x261 */ u8 field_0x261;
+#if TARGET_PC
+    f32 mBackAlpha = 0.0f;
+#endif
 };
 
 class dMenu_Collect3D_c {
@@ -225,7 +227,6 @@ public:
 
     static DUSK_GAME_DATA f32 mViewOffsetY;
 
-private:
     /* 0x004 */ JKRExpHeap* mpHeap;
     /* 0x008 */ JKRSolidHeap* mpSolidHeap;
     /* 0x00C */ dMenu_Collect2D_c* mpCollect2D;
@@ -260,7 +261,6 @@ public:
     bool isKeyCheck() { return mpCollect2D->isKeyCheck(); }
     bool isOutCheck() { return mpCollect2D->isOutCheck(); }
 
-private:
     /* 0x4 */ dMenu_Collect2D_c* mpCollect2D;
     /* 0x8 */ dMenu_Collect3D_c* mpCollect3D;
 };

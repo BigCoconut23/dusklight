@@ -48,6 +48,13 @@ enum class FrameInterpMode : u8 {
     Unlimited = 2,
 };
 
+enum class LetterboxMode : u8 {
+    Off = 0,
+    On = 1,
+    GameplayOnly = 2,
+    CutsceneOnly = 3,
+};
+
 enum class TouchTargeting : u8 {
     Hybrid = 0,
     Hold = 1,
@@ -60,12 +67,25 @@ enum class MenuScaling : u8 {
     Dusklight = 2,
 };
 
+enum class AlwaysGreatspinMode : u8 {
+    OFF = 0,
+    AFTER_SKILL = 1,
+    ALWAYS = 2,
+};
+
 enum class MagicArmorMode : u8 {
     NORMAL = 0,
     ON_DAMAGE = 1,
     DOUBLE_DEFENSE = 2,
     INVINCIBLE = 3,
     COSMETIC = 4,
+};
+
+enum class AudioOutputMode : u8 {
+    StereoSpeakers = 0,
+    StereoHeadphones = 1,   // spatial audio
+    Surround6ch = 2,        // discrete 5.1
+    Surround8ch = 3,        // discrete 7.1
 };
 
 namespace config {
@@ -106,6 +126,12 @@ struct ConfigEnumRange<FrameInterpMode> {
 };
 
 template <>
+struct ConfigEnumRange<LetterboxMode> {
+    static constexpr auto min = LetterboxMode::Off;
+    static constexpr auto max = LetterboxMode::CutsceneOnly;
+};
+
+template <>
 struct ConfigEnumRange<TouchTargeting> {
     static constexpr auto min = TouchTargeting::Hybrid;
     static constexpr auto max = TouchTargeting::Switch;
@@ -118,9 +144,21 @@ struct ConfigEnumRange<MenuScaling> {
 };
 
 template <>
+struct ConfigEnumRange<AlwaysGreatspinMode> {
+    static constexpr auto min = AlwaysGreatspinMode::OFF;
+    static constexpr auto max = AlwaysGreatspinMode::ALWAYS;
+};
+
+template <>
 struct ConfigEnumRange<MagicArmorMode> {
     static constexpr auto min = MagicArmorMode::NORMAL;
     static constexpr auto max = MagicArmorMode::COSMETIC;
+};
+
+template <>
+struct ConfigEnumRange<AudioOutputMode> {
+    static constexpr auto min = AudioOutputMode::StereoSpeakers;
+    static constexpr auto max = AudioOutputMode::Surround8ch;
 };
 
 template <>
@@ -150,13 +188,13 @@ struct UserSettings {
 
     struct {
         // Audio
+        ConfigVar<AudioOutputMode> outputMode;
         ConfigVar<int> masterVolume;
         ConfigVar<int> mainMusicVolume;
         ConfigVar<int> subMusicVolume;
         ConfigVar<int> soundEffectsVolume;
         ConfigVar<int> fanfareVolume;
         ConfigVar<bool> enableReverb;
-        ConfigVar<bool> enableHrtf;
         ConfigVar<bool> menuSounds;
     } audio;
 
@@ -171,6 +209,7 @@ struct UserSettings {
         ConfigVar<bool> biggerWallets;
         ConfigVar<bool> noReturnRupees;
         ConfigVar<bool> disableRupeeCutscenes;
+        ConfigVar<bool> fastTransitions;
         ConfigVar<bool> noSwordRecoil;
         ConfigVar<int> damageMultiplier;
         ConfigVar<bool> noHeartDrops;
@@ -211,6 +250,7 @@ struct UserSettings {
         ConfigVar<Resampler> resampler;
         ConfigVar<bool> enableMapBackground;
         ConfigVar<bool> disableCutscenePillarboxing;
+        ConfigVar<LetterboxMode> disableLetterboxing;
         ConfigVar<bool> enableHighQualityMinimapTextures;
 
         // Audio
@@ -264,13 +304,14 @@ struct UserSettings {
         ConfigVar<bool> enableIndefiniteItemDrops;
         ConfigVar<bool> moonJump;
         ConfigVar<bool> superClawshot;
-        ConfigVar<bool> alwaysGreatspin;
+        ConfigVar<AlwaysGreatspinMode> alwaysGreatspin;
         ConfigVar<bool> enableFastIronBoots;
         ConfigVar<bool> canTransformAnywhere;
         ConfigVar<bool> fastRoll;
         ConfigVar<bool> fastSpinner;
         ConfigVar<MagicArmorMode> armorRupeeDrain;
         ConfigVar<bool> invincibleEnemies;
+        ConfigVar<bool> easyQuickSpin;
 
         // Technical
         ConfigVar<bool> restoreWiiGlitches;
@@ -300,6 +341,7 @@ struct UserSettings {
         ConfigVar<bool> skipPreLaunchUI;
         ConfigVar<bool> wasPresetChosen;
         ConfigVar<bool> checkForUpdates;
+        ConfigVar<bool> checkForModUpdates;
         ConfigVar<int> cardFileType;
         ConfigVar<bool> enableAdvancedSettings;
     } backend;
@@ -321,6 +363,13 @@ void registerSettings();
 
 void applyInternalResolutionScale(int scale);
 void applyResampler(Resampler resampler);
+
+inline bool isLetterboxingDisabled(bool inCutscene) {
+    const auto mode = getSettings().game.disableLetterboxing.getValue();
+    return mode == LetterboxMode::On ||
+           (mode == LetterboxMode::CutsceneOnly && inCutscene) ||
+           (mode == LetterboxMode::GameplayOnly && !inCutscene);
+}
 
 // Transient settings
 

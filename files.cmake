@@ -1422,6 +1422,8 @@ set(DUSK_FILES
         src/dusk/achievements.cpp
         src/dusk/action_bindings.cpp
         src/dusk/action_bindings.h
+        src/dusk/archive.cpp
+        src/dusk/archive.hpp
         src/dusk/asserts.cpp
         src/dusk/autosave.cpp
         src/dusk/config.cpp
@@ -1432,10 +1434,10 @@ set(DUSK_FILES
         src/dusk/dvd_asset.cpp
         src/dusk/dvd_asset.hpp
         src/dusk/extras.c
-        src/dusk/frame_interpolation.cpp
         src/dusk/commands.cpp
         src/dusk/commands.hpp
         src/dusk/game_clock.cpp
+        src/dusk/hash.hpp
         src/dusk/game_mode.cpp
         src/dusk/gamepad_color.cpp
         src/dusk/globals.cpp
@@ -1462,6 +1464,13 @@ set(DUSK_FILES
         src/dusk/imgui/ImGuiStateShare.cpp
         src/dusk/imgui/ImGuiStateShare.hpp
         src/dusk/imgui/ImGuiStubLog.cpp
+        src/dusk/interp/camera.cpp
+        src/dusk/interp/frame_interpolation.cpp
+        src/dusk/interp/line.cpp
+        src/dusk/interp/material.cpp
+        src/dusk/interp/particle.cpp
+        src/dusk/interp/samples.cpp
+        src/dusk/interp/vertex.cpp
         src/dusk/io.cpp
         src/dusk/iso_validate.cpp
         src/dusk/language.cpp
@@ -1478,10 +1487,23 @@ set(DUSK_FILES
         src/dusk/mods/loader/depgraph.hpp
         src/dusk/mods/loader/loader.cpp
         src/dusk/mods/loader/loader.hpp
+        src/dusk/mods/loader/manifest.cpp
+        src/dusk/mods/loader/manifest.hpp
+        src/dusk/mods/loader/natives.cpp
+        src/dusk/mods/loader/natives.hpp
+        src/dusk/mods/loader/packages.cpp
+        src/dusk/mods/loader/packages.hpp
         src/dusk/mods/loader/native_module.cpp
         src/dusk/mods/loader/native_module.hpp
         src/dusk/mods/loader/prepatch.cpp
         src/dusk/mods/loader/prepatch.hpp
+        src/dusk/mods/updates.cpp
+        src/dusk/mods/updates.hpp
+        src/dusk/mods/catalog.cpp
+        src/dusk/mods/catalog.hpp
+        src/dusk/mods/queue.cpp
+        src/dusk/mods/queue.hpp
+        src/dusk/mods/services.hpp
         src/dusk/mods/item.hpp
         src/dusk/mods/item_actor.cpp
         src/dusk/mods/item_checks.cpp
@@ -1490,6 +1512,15 @@ set(DUSK_FILES
         src/dusk/mods/log_buffer.hpp
         src/dusk/mods/manifest.cpp
         src/dusk/mods/manifest.hpp
+        src/dusk/mods/svc/actor.cpp
+        src/dusk/mods/svc/audio_res/audio_res.hpp
+        src/dusk/mods/svc/audio_res/audio_res.cpp
+        src/dusk/mods/svc/audio_res/bst.cpp
+        src/dusk/mods/svc/audio_res/bst.hpp
+        src/dusk/mods/svc/audio_res/wsys.cpp
+        src/dusk/mods/svc/audio_res/wsys.hpp
+        src/dusk/mods/svc/audio_res/wave.cpp
+        src/dusk/mods/svc/audio_res/opus.cpp
         src/dusk/mods/svc/camera.cpp
         src/dusk/mods/svc/config.cpp
         src/dusk/mods/svc/config.hpp
@@ -1500,8 +1531,13 @@ set(DUSK_FILES
         src/dusk/mods/svc/hook.cpp
         src/dusk/mods/svc/host.cpp
         src/dusk/mods/svc/http.cpp
+        src/dusk/mods/svc/net.cpp
+        src/dusk/mods/svc/net.hpp
+        src/dusk/mods/svc/websocket.cpp
         src/dusk/mods/svc/item.cpp
         src/dusk/mods/svc/item.hpp
+        src/dusk/mods/svc/id_allocator.cpp
+        src/dusk/mods/svc/id_allocator.hpp
         src/dusk/mods/svc/log.cpp
         src/dusk/mods/svc/overlay.cpp
         src/dusk/mods/svc/registry.cpp
@@ -1521,6 +1557,8 @@ set(DUSK_FILES
         src/dusk/presentation.cpp
         src/dusk/presentation.hpp
         src/dusk/scope_guard.hpp
+        src/dusk/save_manager.cpp
+        src/dusk/save_manager.hpp
         src/dusk/settings.cpp
         src/dusk/speedrun.cpp
         src/dusk/stubs.cpp
@@ -1535,6 +1573,8 @@ set(DUSK_FILES
         src/dusk/ui/bool_button.hpp
         src/dusk/ui/button.cpp
         src/dusk/ui/button.hpp
+        src/dusk/ui/clamped_text.cpp
+        src/dusk/ui/clamped_text.hpp
         src/dusk/ui/color_input.cpp
         src/dusk/ui/color_input.hpp
         src/dusk/ui/component.cpp
@@ -1544,6 +1584,10 @@ set(DUSK_FILES
         src/dusk/ui/controls.hpp
         src/dusk/ui/document.cpp
         src/dusk/ui/document.hpp
+        src/dusk/ui/drop_install_modal.cpp
+        src/dusk/ui/drop_install_modal.hpp
+        src/dusk/ui/dropdown_button.cpp
+        src/dusk/ui/dropdown_button.hpp
         src/dusk/ui/editor.cpp
         src/dusk/ui/editor.hpp
         src/dusk/ui/event.cpp
@@ -1564,21 +1608,41 @@ set(DUSK_FILES
         src/dusk/ui/list.hpp
         src/dusk/ui/menu_bar.cpp
         src/dusk/ui/menu_bar.hpp
+        src/dusk/ui/mod_browser.cpp
+        src/dusk/ui/mod_browser.hpp
+        src/dusk/ui/online_mods.cpp
+        src/dusk/ui/online_mods.hpp
+        src/dusk/ui/package_row.cpp
+        src/dusk/ui/package_row.hpp
         src/dusk/ui/mod_texture_provider.cpp
         src/dusk/ui/mod_texture_provider.hpp
+        src/dusk/ui/remote_texture_provider.cpp
+        src/dusk/ui/remote_texture_provider.hpp
+        src/dusk/ui/runtime_image.cpp
+        src/dusk/ui/runtime_image.hpp
         src/dusk/ui/mod_window.cpp
         src/dusk/ui/mod_window.hpp
         src/dusk/ui/modal.cpp
         src/dusk/ui/modal.hpp
+        src/dusk/ui/mod_updates.cpp
+        src/dusk/ui/mod_updates.hpp
         src/dusk/ui/mods_window.cpp
         src/dusk/ui/mods_window.hpp
         src/dusk/ui/nav_types.hpp
         src/dusk/ui/nav_group.cpp
         src/dusk/ui/nav_group.hpp
+        src/dusk/ui/context_menu.cpp
+        src/dusk/ui/context_menu.hpp
+        src/dusk/ui/icon_button.cpp
+        src/dusk/ui/icon_button.hpp
+        src/dusk/ui/tooltip.cpp
+        src/dusk/ui/tooltip.hpp
         src/dusk/ui/number_button.cpp
         src/dusk/ui/number_button.hpp
         src/dusk/ui/overlay.cpp
         src/dusk/ui/overlay.hpp
+        src/dusk/ui/row.cpp
+        src/dusk/ui/row.hpp
         src/dusk/ui/pane.cpp
         src/dusk/ui/pane.hpp
         src/dusk/ui/popover.cpp
@@ -1589,6 +1653,8 @@ set(DUSK_FILES
         src/dusk/ui/preset.hpp
         src/dusk/ui/reporting.cpp
         src/dusk/ui/reporting.hpp
+        src/dusk/ui/saves_window.cpp
+        src/dusk/ui/saves_window.hpp
         src/dusk/ui/select_button.cpp
         src/dusk/ui/select_button.hpp
         src/dusk/ui/settings.cpp
@@ -1612,7 +1678,7 @@ set(DUSK_FILES
         src/dusk/version.cpp
         src/dusk/utilities.cpp
         src/helpers/batch.cpp
-        src/helpers/endian.cpp
         src/helpers/offset_ptr.cpp
         src/helpers/string.cpp
+        src/helpers/cast.cpp
 )

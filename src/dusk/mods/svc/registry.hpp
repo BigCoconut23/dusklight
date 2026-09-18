@@ -1,6 +1,7 @@
 #pragma once
 
 #include "dusk/mod_loader.hpp"
+#include "dusk/mods/services.hpp"
 #include "mods/svc/host.h"
 #include "mods/svc/log.h"
 
@@ -48,7 +49,9 @@ struct ServiceModule {
     void (*shutdown)() = nullptr;
 };
 
-bool valid_service_id(const char* serviceId);
+std::vector<ServiceExport> list_services();
+uint64_t services_generation() noexcept;
+
 ModResult register_service(const char* serviceId, uint16_t majorVersion, uint16_t minorVersion,
     const void* service, LoadedMod* provider, bool deferred);
 ModResult publish_deferred_service(
@@ -58,6 +61,8 @@ const ServiceRecord* find_service(
     const char* serviceId, uint16_t majorVersion, uint16_t minMinorVersion);
 // Unlike find_service, also returns deferred records that have not been published yet.
 const ServiceRecord* find_service_record(const char* serviceId, uint16_t majorVersion);
+std::string describe_missing_service(const char* serviceId, uint16_t majorVersion,
+    uint16_t minMinorVersion);
 
 ModResult register_module(const ServiceModule& module);
 void modules_mod_deactivating(LoadedMod& mod);
@@ -72,6 +77,8 @@ extern const ServiceModule g_logModule;
 extern const ServiceModule g_resourceModule;
 extern const ServiceModule g_fileModule;
 extern const ServiceModule g_httpModule;
+extern const ServiceModule g_netModule;
+extern const ServiceModule g_websocketModule;
 extern const ServiceModule g_hookModule;
 extern const ServiceModule g_overlayModule;
 extern const ServiceModule g_textureModule;
@@ -82,11 +89,13 @@ extern const ServiceModule g_gameModule;
 extern const ServiceModule g_cameraModule;
 extern const ServiceModule g_windowModule;
 extern const ServiceModule g_gfxModule;
+extern const ServiceModule g_audioResModule;
 extern const ServiceModule g_saveModule;
 extern const ServiceModule g_stageModule;
 extern const ServiceModule g_itemModule;
 extern const ServiceModule g_flowModule;
 extern const ServiceModule g_messageModule;
 extern const ServiceModule g_gamemodeModule;
+extern const ServiceModule g_actorModule;
 
 }  // namespace dusk::mods::svc

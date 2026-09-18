@@ -4,10 +4,11 @@
 #include "JSystem/JMessage/control.h"
 #include "JSystem/JMessage/JMessage.h"
 #include "SSystem/SComponent/c_xyz.h"
+
+#if TARGET_PC
 #include "helpers/endian.h"
 #include "helpers/string.hpp"
 
-#if TARGET_PC
 #define D_MSG_CLASS_PAGE_CNT_MAX 40
 #define D_MSG_CLASS_CHAR_CNT_MAX 0x210
 #define D_MSG_CLASS_LINE_MAX 12
@@ -196,12 +197,16 @@ struct jmessage_tReference : public JMessage::TReference {
     void addDrawLightCount() { mDrawLightCount++; }
     void setCharAlpha(f32 alpha) { mCharAlpha = alpha; }
 
+#if TARGET_PC
+    void addCharAlpha();
+#else
     void addCharAlpha() {
         mCharAlpha += mAddCharAlpha;
         if (mCharAlpha > 255.0f) {
             mCharAlpha = 255.0f;
         }
     }
+#endif
 
     void setLineLength(int i_no, f32 i_strLen, f32 i_spaceLen) {
         mStrLength[i_no] = i_strLen;
@@ -214,12 +219,16 @@ struct jmessage_tReference : public JMessage::TReference {
         }
     }
 
+#if TARGET_PC
+    void addCharAllAlphaRate();
+#else
     void addCharAllAlphaRate() {
         mCharAllAlphaRate += mAddCharAllAlphaRate;
         if (mCharAllAlphaRate > 1.0f) {
             mCharAllAlphaRate = 1.0f;
         }
     }
+#endif
 
     void addLineLength(int param_0, f32 param_1, f32 param_2) {
         mStrLength[param_0] += param_1;

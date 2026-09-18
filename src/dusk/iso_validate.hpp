@@ -1,10 +1,11 @@
 #ifndef DUSK_ISO_VALIDATE_HPP
 #define DUSK_ISO_VALIDATE_HPP
 
-#include "dusk/settings.h"
 #include <borealis/disc.hpp>
+#include "dusk/settings.h"
 
 #include <cstdint>
+#include <string>
 #include <string_view>
 
 namespace dusk {
@@ -38,7 +39,8 @@ using VerificationStatus = borealis::disc::Progress;
 struct DiscInfo {
     Platform platform = Platform::Unknown;
     Region region = Region::NorthAmerica;
-    std::uint8_t revision = 0;
+    uint8_t revision = 0;
+    std::string gameId;
 };
 
 ValidationError inspect(const char* path, DiscInfo& info);

@@ -3,7 +3,7 @@
 #include <mods/api.h>
 #include <mods/svc/config.h>
 
-#define GAME_MODE_SERVICE_ID "dev.twilitrealm.dusklight.gamemode"
+#define GAME_MODE_SERVICE_ID DUSKLIGHT_SERVICE_ID_PREFIX "gamemode"
 #define GAME_MODE_SERVICE_MAJOR 1u
 #define GAME_MODE_SERVICE_MINOR 0u
 
@@ -25,7 +25,7 @@ typedef struct {
     uint32_t struct_size;
     const char* game_mode_id;
     const char* full_name;
-    const char save_name[32];         // Empty uses default (gczelda2); max 31 chars
+    const char save_name[32];         // Empty uses gczelda2; [A-Za-z0-9._-], except . and ..
     void* user_data;                  // Pointer will be passed to all callbacks
     GameModeCallback on_activated;    // Called when the game mode is selected
     GameModeCallback on_deactivated;  // Called when the game mode is deselected
