@@ -21,8 +21,7 @@ namespace {
 using json = nlohmann::json;
 using namespace std::chrono_literals;
 
-constexpr std::string_view apiUrl =
-    "https://staging.twilitrealm.workers.dev/api/v1/games/dusklight";
+constexpr std::string_view apiUrl = "https://twilitrealm.dev/api/v1/games/dusklight";
 
 std::string_view sort_value(Sort sort) noexcept {
     switch (sort) {
