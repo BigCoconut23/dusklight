@@ -709,7 +709,8 @@ Result apply_artifact(const Storage& storage, const SaveIdentity& identity,
     if (!parsed) {
         return parsed.result;
     }
-    if (parsed.value.game != identity.game || parsed.value.maker != identity.maker) {
+    const auto compatibility = disc_compatibility(parsed.value, identity);
+    if (compatibility == DiscCompatibility::Incompatible) {
         return failure(fmt::format("This save is for {}-{}, but the configured disc uses {}-{}.",
             parsed.value.maker, parsed.value.game, identity.maker, identity.game));
     }
@@ -723,7 +724,11 @@ Result apply_artifact(const Storage& storage, const SaveIdentity& identity,
             return backup.result;
         }
     }
-    if (const Result written = write_gci(storage, identity, artifact.gci); !written) {
+    auto gci = artifact.gci;
+    if (compatibility == DiscCompatibility::RegionChange) {
+        gci[3] = identity.game[3];
+    }
+    if (const Result written = write_gci(storage, identity, gci); !written) {
         return written;
     }
 
@@ -896,6 +901,22 @@ ValueResult<GciHeader> parse_gci(const std::vector<uint8_t>& bytes) {
             .blockCount = blockCount,
         },
     };
+}
+
+DiscCompatibility disc_compatibility(const GciHeader& header, const SaveIdentity& identity) {
+    if (header.game.size() != 4 || identity.game.size() != 4 || header.maker.size() != 2 ||
+        header.maker != identity.maker)
+    {
+        return DiscCompatibility::Incompatible;
+    }
+    if (header.game == identity.game) {
+        return DiscCompatibility::Exact;
+    }
+    if (std::string_view{header.game}.substr(0, 3) == std::string_view{identity.game}.substr(0, 3))
+    {
+        return DiscCompatibility::RegionChange;
+    }
+    return DiscCompatibility::Incompatible;
 }
 
 ValueResult<Artifact> read_artifact(std::string_view location) {
