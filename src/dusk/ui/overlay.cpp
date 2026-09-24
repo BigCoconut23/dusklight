@@ -18,6 +18,7 @@
 #include <fmt/format.h>
 #include <magic_enum.hpp>
 #include <SDL3/SDL_gamepad.h>
+#include <SDL3/SDL_joystick.h>
 #include <SDL3/SDL_timer.h>
 
 #include <algorithm>
@@ -133,6 +134,11 @@ Rml::Element* create_controller_warning(Rml::Element* parent) {
     append_text(content, "Configure ");
     append_text(append(content, "b"), "Port 1");
     append_text(content, " in Settings.");
+
+#if defined(__APPLE__) && TARGET_OS_IOS
+    auto* diagnostics = append(message, "toast-message-text");
+    diagnostics->SetId("controller-diagnostics");
+#endif
 
     return elem;
 }
@@ -391,6 +397,23 @@ void Overlay::update() {
             mControllerWarning->RemoveAttribute("open");
         }
     }
+#if defined(__APPLE__) && TARGET_OS_IOS
+    if (showControllerWarning && mControllerWarning != nullptr) {
+        static Uint64 lastDiagnosticUpdate = 0;
+        const Uint64 now = SDL_GetTicks();
+        if (lastDiagnosticUpdate == 0 || now - lastDiagnosticUpdate >= 1000) {
+            lastDiagnosticUpdate = now;
+            int gamepads = 0;
+            int joysticks = 0;
+            SDL_free(SDL_GetGamepads(&gamepads));
+            SDL_free(SDL_GetJoysticks(&joysticks));
+            if (auto* diagnostics = mControllerWarning->QuerySelector("#controller-diagnostics")) {
+                set_text_content(diagnostics, fmt::format("SDL gamepads: {}, joysticks: {}; Aurora: {}",
+                                                         gamepads, joysticks, PADCount()));
+            }
+        }
+    }
+#endif
 
     if (mMenuNotification != nullptr) {
         if (clock::now() >= mMenuNotificationStartTime + kMenuNotificationDuration) {
