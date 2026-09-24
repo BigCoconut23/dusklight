@@ -92,6 +92,8 @@
 #include <dolphin/dvd.h>
 #include <SDL3/SDL_gamepad.h>
 #include <SDL3/SDL_init.h>
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_timer.h>
 #include <tracy/Tracy.hpp>
 
 #include <atomic>
@@ -153,7 +155,7 @@ AuroraInfo auroraInfo;
 
 #if defined(__APPLE__) && TARGET_OS_IOS
 namespace {
-void remember_port_one_controller();
+void update_port_one_controller();
 }
 #endif
 
@@ -180,15 +182,15 @@ bool launchUILoop() {
             event++;
         }
 
+#if defined(__APPLE__) && TARGET_OS_IOS
+        update_port_one_controller();
+#endif
         if (!aurora_begin_frame()) {
             DuskLog.debug("aurora_begin_frame returned false, skipping draw this frame");
             continue;
         }
 
         dusk::ui::update();
-#if defined(__APPLE__) && TARGET_OS_IOS
-        remember_port_one_controller();
-#endif
 
         dusk::g_imguiConsole.PreDraw();
         dusk::g_imguiConsole.PostDraw();
@@ -282,6 +284,9 @@ void main01(void) {
 
         eventsDone:;
 
+#if defined(__APPLE__) && TARGET_OS_IOS
+        update_port_one_controller();
+#endif
         if (!aurora_begin_frame()) {
             DuskLog.debug("aurora_begin_frame returned false, skipping draw this frame");
             continue;
@@ -293,9 +298,6 @@ void main01(void) {
         mDoGph_gInf_c::updateRenderSize();
 
         dusk::ui::update();
-#if defined(__APPLE__) && TARGET_OS_IOS
-        remember_port_one_controller();
-#endif
 
         const auto timing = dusk::game_clock::advance();
         if (timing.separatePresentation) {
@@ -489,6 +491,12 @@ struct PortOneIdentity {
 std::mutex portOneIdentityMutex;
 PortOneIdentity lastPortOneController;
 std::atomic<bool> inputReady{false};
+std::atomic<bool> externalScenePending{false};
+bool externalSceneSeen = false;
+Uint64 externalSceneAt = 0;
+Uint64 lastControllerScan = 0;
+SDL_JoystickID lastRescanRequest = 0;
+Uint64 lastRescanAt = 0;
 
 PortOneIdentity identity_for_gamepad(SDL_Gamepad* gamepad) {
     char guid[33] = {};
@@ -521,10 +529,32 @@ void inspect_external_scene_controllers() {
         previous = lastPortOneController;
     }
 
+    int sdlCount = 0;
+    SDL_JoystickID* sdlGamepads = SDL_GetGamepads(&sdlCount);
     const u32 count = PADCount();
     const s32 assigned = PADGetIndexForPort(PAD_CHAN0);
-    DuskLog.info("External display scene: {} controller(s), Port 1 index {}, previous GUID '{}' serial '{}'",
-                 count, assigned, previous.guid, previous.serial);
+    DuskLog.info("External display controller scan: SDL {} gamepad(s), Aurora {} controller(s), Port 1 index {}, previous GUID '{}' serial '{}'",
+                 sdlCount, count, assigned, previous.guid, previous.serial);
+
+    for (int i = 0; i < sdlCount; ++i) {
+        const SDL_JoystickID id = sdlGamepads[i];
+        bool registered = false;
+        for (u32 index = 0; index < count; ++index) {
+            SDL_Gamepad* gamepad = PADGetSDLGamepadForIndex(index);
+            registered |= gamepad != nullptr && SDL_GetGamepadID(gamepad) == id;
+        }
+        if (!registered && (id != lastRescanRequest || SDL_GetTicks() - lastRescanAt >= 5000)) {
+            DuskLog.warn("External display: SDL gamepad instance {} missing from Aurora; requesting add event", id);
+            SDL_Event event{};
+            event.type = SDL_EVENT_GAMEPAD_ADDED;
+            event.gdevice.which = id;
+            if (SDL_PushEvent(&event)) {
+                lastRescanRequest = id;
+                lastRescanAt = SDL_GetTicks();
+            }
+        }
+    }
+    SDL_free(sdlGamepads);
 
     s32 match = -1;
     u32 matches = 0;
@@ -540,8 +570,16 @@ void inspect_external_scene_controllers() {
         DuskLog.info("External display scene: index {} name '{}' instance {} GUID '{}' serial '{}' player {}",
                      index, name != nullptr ? name : "unknown", SDL_GetGamepadID(gamepad),
                      identity.guid, identity.serial, player);
-        if (!previous.guid.empty() && identity.guid == previous.guid &&
-            (previous.serial.empty() || identity.serial == previous.serial)) {
+        const bool sameGuid = !previous.guid.empty() && identity.guid == previous.guid;
+        const bool sameSerial = !previous.serial.empty() && identity.serial == previous.serial;
+        uint16_t vendor = 0;
+        uint16_t product = 0;
+        SDL_GetJoystickGUIDInfo(SDL_StringToGUID(previous.guid.c_str()), &vendor, &product, nullptr, nullptr);
+        const bool sameVendorProduct = vendor != 0 && product != 0 &&
+                                       vendor == SDL_GetGamepadVendor(gamepad) &&
+                                       product == SDL_GetGamepadProduct(gamepad);
+        if ((sameGuid && (previous.serial.empty() || sameSerial)) ||
+            (sameSerial && sameVendorProduct)) {
             ++matches;
             if (player < 0) {
                 match = static_cast<s32>(index);
@@ -549,6 +587,15 @@ void inspect_external_scene_controllers() {
         }
     }
 
+    if (externalSceneSeen && SDL_GetTicks() - externalSceneAt < 30000 &&
+        matches == 0 && count == 1 && !previous.guid.empty()) {
+        SDL_Gamepad* sole = PADGetSDLGamepadForIndex(0);
+        if (sole != nullptr && SDL_GetGamepadPlayerIndex(sole) < 0) {
+            DuskLog.warn("External display: prior GUID not found; restoring sole unassigned controller to Port 1");
+            match = 0;
+            matches = 1;
+        }
+    }
     if (assigned < 0 && matches == 1 && match >= 0) {
         PADSetPortForIndex(static_cast<u32>(match), PAD_CHAN0);
         DuskLog.info("External display scene: restored Port 1 to controller index {} (now {})",
@@ -556,6 +603,37 @@ void inspect_external_scene_controllers() {
     } else if (assigned < 0) {
         DuskLog.info("External display scene: Port 1 left unassigned ({} identity matches)", matches);
     }
+}
+
+void update_port_one_controller() {
+    if (!inputReady.load()) {
+        return;
+    }
+    if (externalScenePending.exchange(false)) {
+        externalSceneSeen = true;
+        externalSceneAt = SDL_GetTicks();
+        lastControllerScan = 0;
+        DuskLog.info("External display scene entered; checking controller after event processing");
+    }
+    const s32 assigned = PADGetIndexForPort(PAD_CHAN0);
+    if (assigned >= 0) {
+        remember_port_one_controller();
+        return;
+    }
+    bool havePrior = false;
+    {
+        std::lock_guard lock(portOneIdentityMutex);
+        havePrior = !lastPortOneController.guid.empty();
+    }
+    if (!externalSceneSeen && !havePrior) {
+        return;
+    }
+    const Uint64 now = SDL_GetTicks();
+    if (lastControllerScan != 0 && now - lastControllerScan < 1000) {
+        return;
+    }
+    lastControllerScan = now;
+    inspect_external_scene_controllers();
 }
 } // namespace
 #endif
@@ -647,7 +725,12 @@ int game_main(int argc, char* argv[]) {
     // can call our main function again. Explicitly guard against this reinitialization.
     if (mainCalled.exchange(true)) {
 #if defined(__APPLE__) && TARGET_OS_IOS
-        inspect_external_scene_controllers();
+        // The game loop owns Aurora's controller map. Inspect it there, after SDL events are processed.
+        externalScenePending.store(true);
+        // Wake Aurora if its event loop is waiting while the device scene is inactive.
+        SDL_Event wake{};
+        wake.type = SDL_EVENT_USER;
+        SDL_PushEvent(&wake);
 #endif
         return 0;
     }
@@ -812,7 +895,7 @@ int game_main(int argc, char* argv[]) {
         auroraInfo = aurora_initialize(argc, argv, &config);
 #if defined(__APPLE__) && TARGET_OS_IOS
         inputReady.store(true);
-        remember_port_one_controller();
+        update_port_one_controller();
 #endif
     }
 
