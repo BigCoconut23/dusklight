@@ -10,6 +10,8 @@ DUSK_GAME_EXTERN OSThread mainThread;
 
 void version_check();
 s32 LOAD_COPYDATE(void*);
+// Called when the user explicitly clears Port 1 in controller settings.
+void mDoMain_ForgetPortOneController();
 
 DUSK_GAME_EXTERN OSThread mainThread;
 const int HeapCheckTableNum = 8;
