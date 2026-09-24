@@ -90,12 +90,16 @@
 #include <borealis/version.h>
 #include <cxxopts.hpp>
 #include <dolphin/dvd.h>
+#include <SDL3/SDL_gamepad.h>
 #include <SDL3/SDL_init.h>
 #include <tracy/Tracy.hpp>
 
+#include <atomic>
 #include <filesystem>
+#include <mutex>
 #include <system_error>
 #include <thread>
+#include <utility>
 
 #ifdef __APPLE__
 #include <TargetConditionals.h>
@@ -147,6 +151,12 @@ s32 LOAD_COPYDATE(void*) {
 
 AuroraInfo auroraInfo;
 
+#if defined(__APPLE__) && TARGET_OS_IOS
+namespace {
+void remember_port_one_controller();
+}
+#endif
+
 bool launchUILoop() {
     while (dusk::IsRunning && !dusk::IsGameLaunched) {
         const AuroraEvent* event = aurora_update();
@@ -176,6 +186,9 @@ bool launchUILoop() {
         }
 
         dusk::ui::update();
+#if defined(__APPLE__) && TARGET_OS_IOS
+        remember_port_one_controller();
+#endif
 
         dusk::g_imguiConsole.PreDraw();
         dusk::g_imguiConsole.PostDraw();
@@ -280,6 +293,9 @@ void main01(void) {
         mDoGph_gInf_c::updateRenderSize();
 
         dusk::ui::update();
+#if defined(__APPLE__) && TARGET_OS_IOS
+        remember_port_one_controller();
+#endif
 
         const auto timing = dusk::game_clock::advance();
         if (timing.separatePresentation) {
@@ -461,7 +477,95 @@ static constexpr PADDefaultMapping defaultPadMapping = {
     },
 };
 
-static bool mainCalled = false;
+static std::atomic<bool> mainCalled{false};
+
+#if defined(__APPLE__) && TARGET_OS_IOS
+namespace {
+struct PortOneIdentity {
+    std::string guid;
+    std::string serial;
+};
+
+std::mutex portOneIdentityMutex;
+PortOneIdentity lastPortOneController;
+std::atomic<bool> inputReady{false};
+
+PortOneIdentity identity_for_gamepad(SDL_Gamepad* gamepad) {
+    char guid[33] = {};
+    SDL_GUIDToString(SDL_GetGamepadGUIDForID(SDL_GetGamepadID(gamepad)), guid, sizeof(guid));
+    const char* serial = SDL_GetGamepadSerial(gamepad);
+    return {guid, serial != nullptr ? serial : ""};
+}
+
+void remember_port_one_controller() {
+    const s32 index = PADGetIndexForPort(PAD_CHAN0);
+    if (index < 0) {
+        return; // Keep the last known assignment through a temporary scene transition.
+    }
+    if (SDL_Gamepad* gamepad = PADGetSDLGamepadForIndex(static_cast<u32>(index))) {
+        auto identity = identity_for_gamepad(gamepad);
+        std::lock_guard lock(portOneIdentityMutex);
+        lastPortOneController = std::move(identity);
+    }
+}
+
+void inspect_external_scene_controllers() {
+    if (!inputReady.load()) {
+        DuskLog.info("External display scene: controller input is not initialized yet");
+        return;
+    }
+
+    PortOneIdentity previous;
+    {
+        std::lock_guard lock(portOneIdentityMutex);
+        previous = lastPortOneController;
+    }
+
+    const u32 count = PADCount();
+    const s32 assigned = PADGetIndexForPort(PAD_CHAN0);
+    DuskLog.info("External display scene: {} controller(s), Port 1 index {}, previous GUID '{}' serial '{}'",
+                 count, assigned, previous.guid, previous.serial);
+
+    s32 match = -1;
+    u32 matches = 0;
+    for (u32 index = 0; index < count; ++index) {
+        SDL_Gamepad* gamepad = PADGetSDLGamepadForIndex(index);
+        if (gamepad == nullptr) {
+            DuskLog.info("External display scene: controller index {} unavailable", index);
+            continue;
+        }
+        const auto identity = identity_for_gamepad(gamepad);
+        const int player = SDL_GetGamepadPlayerIndex(gamepad);
+        const char* name = SDL_GetGamepadName(gamepad);
+        DuskLog.info("External display scene: index {} name '{}' instance {} GUID '{}' serial '{}' player {}",
+                     index, name != nullptr ? name : "unknown", SDL_GetGamepadID(gamepad),
+                     identity.guid, identity.serial, player);
+        if (!previous.guid.empty() && identity.guid == previous.guid &&
+            (previous.serial.empty() || identity.serial == previous.serial)) {
+            ++matches;
+            if (player < 0) {
+                match = static_cast<s32>(index);
+            }
+        }
+    }
+
+    if (assigned < 0 && matches == 1 && match >= 0) {
+        PADSetPortForIndex(static_cast<u32>(match), PAD_CHAN0);
+        DuskLog.info("External display scene: restored Port 1 to controller index {} (now {})",
+                     match, PADGetIndexForPort(PAD_CHAN0));
+    } else if (assigned < 0) {
+        DuskLog.info("External display scene: Port 1 left unassigned ({} identity matches)", matches);
+    }
+}
+} // namespace
+#endif
+
+void mDoMain_ForgetPortOneController() {
+#if defined(__APPLE__) && TARGET_OS_IOS
+    std::lock_guard lock(portOneIdentityMutex);
+    lastPortOneController = {};
+#endif
+}
 
 static u8 selectedLanguage;
 
@@ -541,10 +645,12 @@ static void mods_init(const std::filesystem::path& mods_dir) {
 int game_main(int argc, char* argv[]) {
     // On iOS, when connected to an external monitor, SDLUIKitSceneDelegate scene:willConnectToSession:
     // can call our main function again. Explicitly guard against this reinitialization.
-    if (mainCalled) {
+    if (mainCalled.exchange(true)) {
+#if defined(__APPLE__) && TARGET_OS_IOS
+        inspect_external_scene_controllers();
+#endif
         return 0;
     }
-    mainCalled = true;
 
     cxxopts::ParseResult parsed_arg_options;
     borealis::cli::StandardOptions standardOptions;
@@ -704,6 +810,10 @@ int game_main(int argc, char* argv[]) {
         config.imGuiInitCallback = &aurora_imgui_init_callback;
         config.allowTextureDumps = false;
         auroraInfo = aurora_initialize(argc, argv, &config);
+#if defined(__APPLE__) && TARGET_OS_IOS
+        inputReady.store(true);
+        remember_port_one_controller();
+#endif
     }
 
     dusk::presentation::update_frame_rate_preference();
