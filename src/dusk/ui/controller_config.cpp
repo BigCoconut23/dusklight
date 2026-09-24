@@ -18,6 +18,7 @@
 #include "dusk/action_bindings.h"
 #include "dusk/config.hpp"
 #include "dusk/gamepad_color.h"
+#include "m_Do/m_Do_main.h"
 
 namespace dusk::ui {
 namespace {
@@ -404,6 +405,9 @@ void ControllerConfigWindow::render_page(Pane& pane, int port, Page page) {
                 mDoAud_seStartMenu(kSoundClick);
                 cancel_pending_binding();
                 PADClearPort(port);
+                if (port == 0) {
+                    mDoMain_ForgetPortOneController();
+                }
                 PADSetKeyboardActive(static_cast<u32>(port), FALSE);
                 PADSerializeMappings();
                 config::ClearAllActionBindings(port);
@@ -418,6 +422,9 @@ void ControllerConfigWindow::render_page(Pane& pane, int port, Page page) {
                 mDoAud_seStartMenu(kSoundClick);
                 cancel_pending_binding();
                 PADClearPort(port);
+                if (port == 0) {
+                    mDoMain_ForgetPortOneController();
+                }
                 PADSetKeyboardActive(static_cast<u32>(port), TRUE);
                 PADSerializeMappings();
                 config::ClearAllActionBindings(port);
