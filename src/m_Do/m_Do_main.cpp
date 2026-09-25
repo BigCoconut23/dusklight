@@ -9,6 +9,7 @@
 #include <TargetConditionals.h>
 #if TARGET_OS_IOS
 #include "m_Do/ios_controller_bridge.h"
+#include <SDL3/SDL_system.h>
 #endif
 #endif
 #include "DynamicLink.h"
@@ -156,11 +157,23 @@ s32 LOAD_COPYDATE(void*) {
 AuroraInfo auroraInfo;
 #if defined(__APPLE__) && TARGET_OS_IOS
 static std::atomic<bool> externalSceneCreated{false};
+static std::atomic<bool> restoreIOSEventPump{false};
+
+static void restore_event_pump_after_external_scene() {
+    if (restoreIOSEventPump.exchange(false)) {
+        // SDL's second scene calls postFinishLaunch again. After our guarded
+        // game_main returns, SDL disables the global iOS event pump even though
+        // this original game loop is still running.
+        SDL_SetiOSEventPump(true);
+        SDL_Log("Restored iOS event pump after external display scene connected");
+    }
+}
 #endif
 
 bool launchUILoop() {
     while (dusk::IsRunning && !dusk::IsGameLaunched) {
 #if defined(__APPLE__) && TARGET_OS_IOS
+        restore_event_pump_after_external_scene();
         DuskIOSControllerBridgeUpdate(externalSceneCreated.load());
 #endif
         const AuroraEvent* event = aurora_update();
@@ -246,6 +259,7 @@ void main01(void) {
     do {
         // 1. Update Window Events
 #if defined(__APPLE__) && TARGET_OS_IOS
+        restore_event_pump_after_external_scene();
         DuskIOSControllerBridgeUpdate(externalSceneCreated.load());
 #endif
         const AuroraEvent* event = aurora_update();
@@ -571,6 +585,7 @@ int game_main(int argc, char* argv[]) {
     if (mainCalled.exchange(true)) {
 #if defined(__APPLE__) && TARGET_OS_IOS
         externalSceneCreated.store(true);
+        restoreIOSEventPump.store(true);
         // Wake the original game loop so it can check the newly created scene.
         if (SDL_WasInit(SDL_INIT_EVENTS)) {
             SDL_Event wake{};
