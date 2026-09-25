@@ -165,7 +165,7 @@ static void restore_event_pump_after_external_scene() {
         // game_main returns, SDL disables the global iOS event pump even though
         // this original game loop is still running.
         SDL_SetiOSEventPump(true);
-        SDL_Log("Restored iOS event pump after external display scene connected");
+        DuskLog.info("Restored iOS event pump after external display scene connected");
     }
 }
 #endif
