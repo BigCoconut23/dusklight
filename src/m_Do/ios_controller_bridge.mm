@@ -2,7 +2,11 @@
 
 #import <GameController/GameController.h>
 #include <SDL3/SDL.h>
+// The game SDK uses BOOL for an integer; Apple's headers use BOOL for a bool.
+// Rename only the game SDK typedef while including its C++ declarations.
+#define BOOL DuskGameBool
 #include <dolphin/pad.h>
+#undef BOOL
 
 #include <algorithm>
 
