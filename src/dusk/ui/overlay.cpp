@@ -11,6 +11,12 @@
 #include "dusk/speedrun.h"
 
 #include "m_Do/m_Do_main.h"
+#if defined(__APPLE__)
+#include <TargetConditionals.h>
+#if TARGET_OS_IOS
+#include "m_Do/ios_controller_bridge.h"
+#endif
+#endif
 
 #include <aurora/gfx.h>
 #include <borealis/log.hpp>
@@ -133,6 +139,10 @@ Rml::Element* create_controller_warning(Rml::Element* parent) {
     append_text(content, "Configure ");
     append_text(append(content, "b"), "Port 1");
     append_text(content, " in Settings.");
+#if defined(__APPLE__) && TARGET_OS_IOS
+    auto* diagnostics = append(message, "toast-message-text");
+    diagnostics->SetId("controller-diagnostics");
+#endif
 
     return elem;
 }
@@ -391,6 +401,21 @@ void Overlay::update() {
             mControllerWarning->RemoveAttribute("open");
         }
     }
+#if defined(__APPLE__) && TARGET_OS_IOS
+    if (showControllerWarning && mControllerWarning != nullptr) {
+        static Uint64 lastDiagnosticUpdate = 0;
+        const Uint64 now = SDL_GetTicks();
+        if (lastDiagnosticUpdate == 0 || now - lastDiagnosticUpdate >= 1000) {
+            lastDiagnosticUpdate = now;
+            int gamepads = 0;
+            SDL_free(SDL_GetGamepads(&gamepads));
+            if (auto* diagnostics = mControllerWarning->QuerySelector("#controller-diagnostics")) {
+                set_text_content(diagnostics, fmt::format("Apple controllers: {}; SDL gamepads: {}; Aurora: {}",
+                                                         DuskIOSControllerBridgeCount(), gamepads, PADCount()));
+            }
+        }
+    }
+#endif
 
     if (mMenuNotification != nullptr) {
         if (clock::now() >= mMenuNotificationStartTime + kMenuNotificationDuration) {
