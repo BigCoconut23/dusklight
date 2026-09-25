@@ -5,6 +5,12 @@
  */
 
 #include "m_Do/m_Do_main.h"
+#ifdef __APPLE__
+#include <TargetConditionals.h>
+#if TARGET_OS_IOS
+#include "m_Do/ios_controller_bridge.h"
+#endif
+#endif
 #include "DynamicLink.h"
 #include "JSystem/JAudio2/JASAudioThread.h"
 #include "JSystem/JAudio2/JAUSoundTable.h"
@@ -92,6 +98,7 @@
 #include <dolphin/dvd.h>
 #include <SDL3/SDL_init.h>
 #include <tracy/Tracy.hpp>
+#include <atomic>
 
 #include <filesystem>
 #include <system_error>
@@ -146,9 +153,15 @@ s32 LOAD_COPYDATE(void*) {
 }
 
 AuroraInfo auroraInfo;
+#if defined(__APPLE__) && TARGET_OS_IOS
+static std::atomic<bool> externalSceneCreated{false};
+#endif
 
 bool launchUILoop() {
     while (dusk::IsRunning && !dusk::IsGameLaunched) {
+#if defined(__APPLE__) && TARGET_OS_IOS
+        DuskIOSControllerBridgeUpdate(externalSceneCreated.load());
+#endif
         const AuroraEvent* event = aurora_update();
         while (event != nullptr && event->type != AURORA_NONE) {
             switch (event->type) {
@@ -170,6 +183,9 @@ bool launchUILoop() {
             event++;
         }
 
+#if defined(__APPLE__) && TARGET_OS_IOS
+        DuskIOSControllerBridgeAssignPortOne();
+#endif
         if (!aurora_begin_frame()) {
             DuskLog.debug("aurora_begin_frame returned false, skipping draw this frame");
             continue;
@@ -228,6 +244,9 @@ void main01(void) {
 
     do {
         // 1. Update Window Events
+#if defined(__APPLE__) && TARGET_OS_IOS
+        DuskIOSControllerBridgeUpdate(externalSceneCreated.load());
+#endif
         const AuroraEvent* event = aurora_update();
         while (true) {
             switch (event->type) {
@@ -269,6 +288,9 @@ void main01(void) {
 
         eventsDone:;
 
+#if defined(__APPLE__) && TARGET_OS_IOS
+        DuskIOSControllerBridgeAssignPortOne();
+#endif
         if (!aurora_begin_frame()) {
             DuskLog.debug("aurora_begin_frame returned false, skipping draw this frame");
             continue;
@@ -461,7 +483,7 @@ static constexpr PADDefaultMapping defaultPadMapping = {
     },
 };
 
-static bool mainCalled = false;
+static std::atomic<bool> mainCalled{false};
 
 static u8 selectedLanguage;
 
@@ -541,10 +563,18 @@ static void mods_init(const std::filesystem::path& mods_dir) {
 int game_main(int argc, char* argv[]) {
     // On iOS, when connected to an external monitor, SDLUIKitSceneDelegate scene:willConnectToSession:
     // can call our main function again. Explicitly guard against this reinitialization.
-    if (mainCalled) {
+    if (mainCalled.exchange(true)) {
+#if defined(__APPLE__) && TARGET_OS_IOS
+        externalSceneCreated.store(true);
+        // Wake the original game loop so it can check the newly created scene.
+        if (SDL_WasInit(SDL_INIT_EVENTS)) {
+            SDL_Event wake{};
+            wake.type = SDL_EVENT_USER;
+            SDL_PushEvent(&wake);
+        }
+#endif
         return 0;
     }
-    mainCalled = true;
 
     cxxopts::ParseResult parsed_arg_options;
     borealis::cli::StandardOptions standardOptions;
