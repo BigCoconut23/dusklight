@@ -16,6 +16,7 @@ SDL_Joystick* virtualJoystick = nullptr;
 GCController* selectedController = nil;
 int lastAppleCount = -1;
 int lastPhysicalCount = -1;
+bool wasExternalScene = false;
 bool discoveryStarted = false;
 
 Sint16 stick(float value) {
@@ -49,6 +50,8 @@ int DuskIOSControllerBridgeCount() {
 }
 
 void DuskIOSControllerBridgeUpdate(bool externalScene) {
+    const bool firstExternalFrame = externalScene && !wasExternalScene;
+    wasExternalScene = externalScene;
     NSArray<GCController*>* connected = GCController.controllers;
     int physicalCount = 0;
     int sdlCount = 0;
@@ -58,7 +61,8 @@ void DuskIOSControllerBridgeUpdate(bool externalScene) {
     }
     SDL_free(gamepads);
 
-    if (externalScene && (lastAppleCount != static_cast<int>(connected.count) || lastPhysicalCount != physicalCount)) {
+    if (externalScene &&
+        (firstExternalFrame || lastAppleCount != static_cast<int>(connected.count) || lastPhysicalCount != physicalCount)) {
         SDL_Log("iOS controller bridge: Apple controllers %lu, physical SDL gamepads %d, virtual gamepad %u, Port 1 index %d",
                 static_cast<unsigned long>(connected.count), physicalCount, virtualID, PADGetIndexForPort(PAD_CHAN0));
         for (GCController* controller in connected) {
